@@ -98,6 +98,6 @@
 - [x] Run `docmgr doctor --ticket OAP-02-JS-HARNESS-CONTINUATION --stale-after 30`
 - [x] **STOP-GATE:** Explain final full live smoke run command and wait for approval
 - [x] Execute final full live smoke run
-- [ ] Publish final docs/report to reMarkable
-- [ ] Commit final Phase 8 changes
-- [ ] Record final diary/changelog updates and close ticket
+- [x] Publish final docs/report to reMarkable
+- [x] Commit final Phase 8 changes
+- [x] Record final diary/changelog updates and close ticket

@@ -23,7 +23,7 @@ RelatedFiles:
 ExternalSources:
     - https://developers.openai.com/codex/app-server/
 Summary: Implementation diary for OAP-02 continuation work after OAP-01 closure.
-LastUpdated: 2026-02-22T23:24:04-05:00
+LastUpdated: 2026-02-22T23:25:49-05:00
 WhatFor: Preserve an exact implementation trail while completing the remaining harness architecture scope.
 WhenToUse: Read before coding or reviewing OAP-02 work to understand current phase, decisions, and risk context.
 ---
@@ -1066,3 +1066,83 @@ The same run also showed no approval requests during the window (`requestsObserv
 
 - Final run thread id:
   - `019c88bc-63c8-7210-a4a7-37f7a318c938`
+
+## Step 14: Publish OAP-02 Documents to reMarkable and Close the Ticket
+
+After the final smoke gate succeeded, I completed publication by bundling core OAP-02 docs into one PDF and uploading them to reMarkable under a ticket-scoped remote directory. I verified cloud listing and then closed the ticket via docmgr.
+
+I also normalized ticket status views so the body status line matches frontmatter (`complete`) and finished the remaining Phase 8 task checkboxes.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 13)
+
+**Assistant interpretation:** Continue from the successful run into publication and closure.
+
+**Inferred user intent:** Complete OAP-02 end-to-end, including documentation delivery and ticket closure hygiene.
+
+**Commit (code):** pending
+
+### What I did
+
+- Verified reMarkable tooling/auth:
+  - `remarquee status`
+  - `remarquee cloud account --non-interactive`
+- Ran bundle upload dry-run:
+  - `remarquee upload bundle --dry-run <index/roadmap/diary/help/examples/tasks/changelog> --name "OAP-02 JS Harness Continuation" --remote-dir "/ai/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION" --toc-depth 2`
+- Ran real upload:
+  - `remarquee upload bundle <same files> --name "OAP-02 JS Harness Continuation" --remote-dir "/ai/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION" --toc-depth 2`
+- Verified remote listing:
+  - `remarquee cloud ls /ai/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION --long --non-interactive`
+  - observed: `[f] OAP-02 JS Harness Continuation`
+- Closed ticket:
+  - `docmgr ticket close --ticket OAP-02-JS-HARNESS-CONTINUATION --changelog-entry "Ticket closed after final Phase 8 live smoke gate and reMarkable publication (/ai/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION)."`
+- Updated:
+  - `tasks.md` final Phase 8 checkboxes
+  - `index.md` status body line from `active` to `complete`
+
+### Why
+
+- Publication to reMarkable and formal ticket closure were explicit completion requirements.
+
+### What worked
+
+- Dry-run and real upload both succeeded.
+- Remote listing confirms the uploaded artifact exists in the expected folder.
+- Ticket close operation succeeded and updated metadata/changelog.
+
+### What didn't work
+
+- `docmgr ticket close` warned about 2 open tasks at close time; these were immediately reconciled in follow-up edits.
+
+### What I learned
+
+- It is safer to check final task completion state before invoking `ticket close` to avoid close-time warnings, even when closing is still allowed.
+
+### What was tricky to build
+
+- Preserving strict commit scope while closed-ticket and unrelated local changes exist in the same working tree.
+- Approach: stage only OAP-02 files for final closure commit and leave user-approved unrelated changes untouched.
+
+### What warrants a second pair of eyes
+
+- None blocking for OAP-02; remaining risk is only optional scenario hardening for deterministic approval-branch coverage.
+
+### What should be done in the future
+
+- Start the next ticket for follow-up branch-coverage hardening if we want a stricter live acceptance gate for approval-triggered paths.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/index.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/changelog.md`
+- How to validate:
+  - `remarquee cloud ls /ai/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION --long --non-interactive`
+  - `docmgr ticket show --ticket OAP-02-JS-HARNESS-CONTINUATION`
+
+### Technical details
+
+- Uploaded bundle artifact name:
+  - `OAP-02 JS Harness Continuation`
