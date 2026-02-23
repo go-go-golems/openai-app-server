@@ -840,3 +840,77 @@ I also added fault-injection style tests for retry and event-buffer bounds plus 
   - `-32001` (server overloaded)
 - Opt-out flag added to commands:
   - `--opt-out-notification-methods` (comma-separated)
+
+## Step 11: Implement Phase 8 Non-Live Completion Work (State CLI + Help/Examples + Validation)
+
+I completed the non-live Phase 8 tasks by adding a projected-state CLI command, writing help/troubleshooting and usage example references, and running full validation (`go test` + `docmgr doctor`). This leaves only the final live smoke gate and publication/closure steps pending.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 9)
+
+**Assistant interpretation:** Continue implementation forward until the next required live-run gate.
+
+**Inferred user intent:** Finish as much as possible without pausing except where explicitly required.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added projected-state CLI command and test:
+  - `cmd/openai-app-server/harness_state_replay_command.go`
+  - `cmd/openai-app-server/harness_state_replay_command_test.go`
+  - wired command in `cmd/openai-app-server/root.go`
+- Added docs:
+  - `reference/02-cli-help-and-troubleshooting.md`
+  - `reference/03-usage-examples.md`
+- Ran validation:
+  - `go test ./...` (pass)
+  - `docmgr doctor --ticket OAP-02-JS-HARNESS-CONTINUATION --stale-after 30` (all checks passed)
+
+### Why
+
+- Phase 8 requires usable CLI/operator documentation and complete non-live validation before final live smoke and publication.
+
+### What worked
+
+- New `harness state-replay` command projects state from JSON event records and prints deterministic snapshots.
+- Help/example docs provide copy/paste workflows for wrappers, built-ins, and state replay.
+- Full code and ticket validation passed.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- A replay command is a low-friction way to validate projector behavior and troubleshoot event handling without live runs.
+
+### What was tricky to build
+
+- Keeping example docs aligned with rapidly evolving script inventory.
+- Approach: reference canonical ticket script paths and include only validated command forms.
+
+### What warrants a second pair of eyes
+
+- None blocking; final confidence now depends mainly on the last live smoke gate.
+
+### What should be done in the future
+
+- Stop at final live smoke gate and request approval before execution.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/cmd/openai-app-server/harness_state_replay_command.go`
+  - `openai-app-server/cmd/openai-app-server/harness_state_replay_command_test.go`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/reference/02-cli-help-and-troubleshooting.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/reference/03-usage-examples.md`
+- How to validate:
+  - `go test ./...`
+  - `docmgr doctor --ticket OAP-02-JS-HARNESS-CONTINUATION --stale-after 30`
+
+### Technical details
+
+- New command path:
+  - `openai-app-server harness state-replay --events-file <file>`

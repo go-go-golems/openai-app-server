@@ -135,3 +135,17 @@ Step 10: Implemented Phase 7 reliability hardening with retry/backoff helper, bo
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/config/defaults.go — Default opt-out methods support via env
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 7 tasks updated
 
+
+## 2026-02-22
+
+Step 11: Completed Phase 8 non-live tasks by adding projected-state replay CLI command, help/examples docs, and full validation (go test + doctor).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_state_replay_command.go — Projected-state replay CLI command
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_state_replay_command_test.go — State replay command test
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/root.go — Command tree wiring for state-replay
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/reference/02-cli-help-and-troubleshooting.md — CLI help and troubleshooting reference
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/reference/03-usage-examples.md — Usage examples reference
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 8 non-live task progress updated
+

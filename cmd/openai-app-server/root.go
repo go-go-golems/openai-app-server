@@ -48,6 +48,20 @@ func newRootCommand() (*cobra.Command, error) {
 		return nil, fmt.Errorf("wrap harness run command: %w", err)
 	}
 
+	harnessStateReplay, err := newHarnessStateReplayCommand()
+	if err != nil {
+		return nil, fmt.Errorf("build harness state-replay command: %w", err)
+	}
+	harnessStateReplayCobra, err := cli.BuildCobraCommand(harnessStateReplay,
+		cli.WithParserConfig(cli.CobraParserConfig{
+			ShortHelpSections: []string{schema.DefaultSlug},
+			MiddlewaresFunc:   cli.CobraCommandDefaultMiddlewares,
+		}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("wrap harness state-replay command: %w", err)
+	}
+
 	threadList, err := newThreadListCommand(defaults)
 	if err != nil {
 		return nil, fmt.Errorf("build thread list command: %w", err)
@@ -77,6 +91,7 @@ func newRootCommand() (*cobra.Command, error) {
 	}
 
 	harnessGroup.AddCommand(harnessRunCobra)
+	harnessGroup.AddCommand(harnessStateReplayCobra)
 	threadGroup.AddCommand(threadListCobra)
 	threadGroup.AddCommand(threadReadCobra)
 	root.AddCommand(harnessGroup)

@@ -91,11 +91,11 @@
 
 ## Phase 8: CLI and Docs Completion
 
-- [ ] Add CLI state-inspection commands that use projected state
-- [ ] Add Glazed help pages and troubleshooting docs
-- [ ] Add final examples and usage docs
-- [ ] Run full `go test ./...`
-- [ ] Run `docmgr doctor --ticket OAP-02-JS-HARNESS-CONTINUATION --stale-after 30`
+- [x] Add CLI state-inspection commands that use projected state
+- [x] Add Glazed help pages and troubleshooting docs
+- [x] Add final examples and usage docs
+- [x] Run full `go test ./...`
+- [x] Run `docmgr doctor --ticket OAP-02-JS-HARNESS-CONTINUATION --stale-after 30`
 - [ ] **STOP-GATE:** Explain final full live smoke run command and wait for approval
 - [ ] Execute final full live smoke run
 - [ ] Publish final docs/report to reMarkable
