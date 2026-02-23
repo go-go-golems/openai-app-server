@@ -106,3 +106,19 @@ Step 9: Retroactively archived historical harness scripts into the ticket `scrip
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js — Ticket-local copy of second live notification/turn script
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md — Playbook updated to canonical script path
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Retroactive script migration recorded in diary
+
+
+## 2026-02-22
+
+Step 10: Replaced runtime global `__host` primitives with explicit native JS modules (`require("ui")`, `require("rpc")`, `require("clock")`) and migrated tests/scripts accordingly (commit 451f29b34695bce40654d811ca0af3db784bc19d).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime.go — Removed global host injection and registered module-based runtime API
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_ui.go — New `ui` native module
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_rpc.go — New `rpc` native module
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_clock.go — New `clock` native module
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime_test.go — Runtime API tests updated to module contract and no `__host`
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_run_command_test.go — Harness integration tests updated to `require("ui")`
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js — Script fixture switched to `require("ui")`
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js — Script fixture switched to `require("ui")`

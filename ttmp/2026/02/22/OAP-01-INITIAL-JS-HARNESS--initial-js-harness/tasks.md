@@ -55,3 +55,13 @@
 - [x] **STOP-GATE:** Notify user immediately before launching first real harness test
 - [x] (Pending user confirmation) Run first real harness test
 - [x] Archive all harness scripts under `ttmp/.../scripts/` (retroactive migration from `/tmp`)
+
+## Phase 6: Replace `__host` with Native JS Modules
+
+- [x] Add native modules `require("ui")`, `require("rpc")`, and `require("clock")`
+- [x] Remove global `__host` injection from runtime bootstrap
+- [x] Update harness code/tests/scripts to use `require("ui")` instead of `__host.ui`
+- [x] Update runtime tests to validate module-based API and absence of `__host`
+- [x] Run `go test ./...` after migration
+- [x] Commit module API migration changes
+- [x] Record diary/changelog updates for module API migration

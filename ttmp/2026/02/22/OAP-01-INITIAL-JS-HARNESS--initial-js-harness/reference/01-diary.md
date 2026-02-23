@@ -901,3 +901,87 @@ This keeps all harness fixtures durable, reviewable, and uploadable with the res
 - Ticket targets:
   - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js`
   - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js`
+
+
+## Step 10: Replace `__host` with `require("ui"|"rpc"|"clock")` Modules
+
+I replaced the global `__host` bridge surface with explicit native modules loaded via `require(...)`. The runtime now registers `ui`, `rpc`, and `clock` modules directly, and scripts/tests use those modules instead of global host injection.
+
+This is a clean break with no compatibility shim, matching the request to keep the surface area simple while the harness is still greenfield.
+
+### Prompt Context
+
+**User prompt (verbatim):** "We don't need compatibility, we're just doing this from scratch. Yes clean this up. Add tasks to the ticket and then work on them ."
+
+**Assistant interpretation:** Remove `__host` entirely, switch to module imports (`require("ui")` pattern), track it as explicit ticket tasks, execute, and document.
+
+**Inferred user intent:** Establish a cleaner JS API contract early so future harness scripts are ergonomic and avoid legacy internal globals.
+
+**Commit (code):** 451f29b — "Replace __host with ui/rpc/clock native JS modules"
+
+### What I did
+
+- Added new native modules in `pkg/js`:
+  - `module_ui.go` (`require("ui")`: `emit`, `onEvent`)
+  - `module_rpc.go` (`require("rpc")`: `request`, `notify`, `onNotification`, `onRequest`)
+  - `module_clock.go` (`require("clock")`: `nowMs`, `sleep`)
+- Updated runtime bootstrap to register modules and removed global host installation:
+  - `pkg/js/runtime.go` no longer sets `globalThis.__host`.
+- Updated tests and harness fixtures:
+  - `pkg/js/runtime_test.go` now verifies module APIs and asserts `__host` is absent.
+  - `cmd/openai-app-server/harness_run_command_test.go` switched test scripts to `require("ui")`.
+  - `ttmp/.../scripts/01-first-real-harness.js` and `ttmp/.../scripts/02-live-notification-turn-flow.js` switched to `require("ui")`.
+- Ran validation:
+  - `gofmt -w pkg/js/runtime.go pkg/js/module_clock.go pkg/js/module_rpc.go pkg/js/module_ui.go pkg/js/runtime_test.go cmd/openai-app-server/harness_run_command_test.go`
+  - `go test ./...` (pass)
+
+### Why
+
+- `__host` exposed transport internals as a global namespace and made scripts look host-coupled.
+- Module-based imports are clearer and align with the goja `require` model already used by `codex`.
+
+### What worked
+
+- Runtime bootstrap cleanly loads all modules.
+- Existing harness semantics stayed intact while scripts changed to `require("ui")`.
+- Tests passed without adding any compatibility layer.
+
+### What didn't work
+
+- N/A
+
+### What I learned
+
+- Moving module wiring out of runtime global setup reduced bootstrap complexity and made API boundaries explicit.
+
+### What was tricky to build
+
+- The key risk was dropping a global API while preserving behavior in both runtime tests and command integration tests.
+- Approach: migrate module registration first, then update tests/fixtures immediately so regressions surfaced via `go test ./...`.
+
+### What warrants a second pair of eyes
+
+- Confirm whether we want `codex.connect()` to continue exposing RPC methods directly, or to eventually compose from `require("rpc")` internally for stricter layering.
+
+### What should be done in the future
+
+- Update architecture doc sections that still describe `__host` as the runtime API.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/js/runtime.go` (`NewRuntime`, removed host injection)
+  - `openai-app-server/pkg/js/module_ui.go` (`registerUIModule`)
+  - `openai-app-server/pkg/js/module_rpc.go` (`registerRPCModule`)
+  - `openai-app-server/pkg/js/module_clock.go` (`registerClockModule`)
+  - `openai-app-server/pkg/js/runtime_test.go` (`TestRuntimeInstallsHostAndCodexModule`)
+- How to validate:
+  - `go test ./...`
+  - `rg -n "__host" -S pkg/js cmd/openai-app-server`
+
+### Technical details
+
+- Module API now preferred in JS:
+  - `const ui = require("ui"); ui.emit({...})`
+  - `const rpc = require("rpc"); await rpc.request("thread/list", {limit:1})`
+  - `const clock = require("clock"); await clock.sleep(250)`
