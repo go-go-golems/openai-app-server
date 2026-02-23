@@ -11,6 +11,7 @@
 - [x] Upload OAP-04 design document to reMarkable
 - [x] Expand design doc with file-level implementation details and concrete runtime/test blueprint
 - [x] Add scenario sketch scripts under `scripts/sketches/` (research, incident, release, security, support)
+- [x] Expand design with intern-oriented onboarding/resumability sections and extend sketch pack with additional checkpointed real-world scenarios
 
 ## Phase 1: Core Lifecycle Helpers
 
@@ -28,8 +29,8 @@
 
 ## Phase 3: Canonical Script Migration
 
-- [ ] Migrate `scripts/05-final-full-smoke.js` to improved API as canonical v2 reference
-- [ ] Add diagnostic `ui.emit` instrumentation for branch-miss reasons in canonical smoke
+- [x] Migrate `scripts/05-final-full-smoke.js` to improved API as canonical v2 reference
+- [x] Add diagnostic `ui.emit` instrumentation for branch-miss reasons in canonical smoke
 - [x] Run `go test ./...`
 - [x] Commit implementation and test updates
 - [x] Update OAP-04 diary/changelog with implementation details
