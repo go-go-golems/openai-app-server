@@ -207,7 +207,7 @@ func (c *Client) RespondError(ctx context.Context, id any, code int, message str
 	return c.transport.Send(ctx, msg)
 }
 
-func (c *Client) OnNotification(method string, handler NotificationHandler) (unsubscribe func()) {
+func (c *Client) OnNotification(method string, handler NotificationHandler) func() {
 	c.notificationMu.Lock()
 	defer c.notificationMu.Unlock()
 	c.notifications[method] = append(c.notifications[method], handler)
@@ -221,7 +221,7 @@ func (c *Client) OnNotification(method string, handler NotificationHandler) (uns
 	}
 }
 
-func (c *Client) OnRequest(method string, handler RequestHandler) (unsubscribe func()) {
+func (c *Client) OnRequest(method string, handler RequestHandler) func() {
 	c.requestMu.Lock()
 	defer c.requestMu.Unlock()
 	c.requests[method] = append(c.requests[method], handler)

@@ -17,6 +17,7 @@ WhatFor: "Capture upstream design/requirements text imported from /tmp for trace
 WhenToUse: "Reference when validating architecture and playbook assumptions against imported guidance."
 ---
 
+
 Below is a JS-first “harness” API design that sits *on top of* Codex App Server’s bidirectional JSON‑RPC stream (threads → turns → items), with examples of harnesses that react to events/approvals and steer the agent. I’m going to align the API tightly to the App Server concepts because those primitives are already designed to be UI-friendly and composable. ([OpenAI Developers][1])
 
 ---

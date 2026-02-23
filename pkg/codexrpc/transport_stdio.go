@@ -27,6 +27,7 @@ func NewStdioTransport(command string, args ...string) (*StdioTransport, error) 
 		return nil, fmt.Errorf("codexrpc: stdio command is required")
 	}
 
+	// #nosec G204 -- command/args are explicit operator-provided CLI settings for stdio transport.
 	cmd := exec.Command(command, args...)
 	cmd.Stderr = os.Stderr
 	stdin, err := cmd.StdinPipe()

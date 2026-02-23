@@ -2,7 +2,6 @@ package builtin
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/go-go-golems/openai-app-server/pkg/harness"
@@ -108,8 +107,4 @@ func asFloat64(v any) (float64, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func formatRatio(ratio float64) string {
-	return fmt.Sprintf("%.4f", ratio)
 }
