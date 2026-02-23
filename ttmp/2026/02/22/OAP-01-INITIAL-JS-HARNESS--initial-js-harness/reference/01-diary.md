@@ -1523,3 +1523,84 @@ I validated this end-to-end in tests using in-memory transport by simulating an 
 
 - Response-path integration now supports:
   - `const rpc = require("rpc"); rpc.respond(id, result); rpc.respondError(id, code, message, data);`
+
+
+## Step 18: Live Inbound-Request Probe Results
+
+I executed a live probe scenario to determine whether inbound request events are currently surfaced to the harness in this integration mode. The probe was run twice: first with strict success requiring observed requests (which failed as informative signal), then with adjusted semantics treating “no request observed” as a valid observational outcome.
+
+Final result: the run completed successfully with `probeStatus:"no_inbound_request_observed"` while still demonstrating that the model executed a shell command (`date`) and produced command-execution notifications and output.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 14)
+
+**Assistant interpretation:** Continue with real-world validation after response-path implementation.
+
+**Inferred user intent:** Empirically verify live behavior, not only synthetic/unit-test behavior, and keep moving.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added live probe assets:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/06-live-inbound-request-probe.js`
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/05-live-inbound-request-probe-plan.md`
+- Ran preflight:
+  - `go test ./...` (pass)
+- Executed live probe command (strict mode) with wait gate:
+  - command returned non-zero because completion event had `ok:false` when no request was observed.
+- Updated probe script semantics:
+  - treat `no_inbound_request_observed` as `ok:true` observational outcome.
+- Re-ran same live probe command:
+  - `wait-for-ui-type matched type=inbound-request-probe-complete`
+  - `harness.run completed`
+  - completion payload: `probeStatus:"no_inbound_request_observed"`, `sawRequest:false`, `respondedToRequest:false`.
+
+### Why
+
+- Needed concrete evidence of whether inbound request messages are actually delivered in current live settings before building approval harness logic around them.
+
+### What worked
+
+- Probe reliably captured and summarized notification stream and final status via wait-gated completion.
+- Real run showed command execution events (`exec_command_begin`, command output path) without inbound request events.
+
+### What didn't work
+
+- Initial strict probe criterion (`ok` requires observed request) was too strong for this environment and caused intentional command failure despite valuable data.
+- Resolution: changed completion semantics to separate “probe success” from “request observed” status.
+
+### What I learned
+
+- In current mode, command execution can occur without surfacing inbound request events to the harness callback path.
+
+### What was tricky to build
+
+- Designing probe criteria that are strict enough to catch real failures while still reporting useful environmental observations.
+- Approach: introduce explicit `probeStatus` and keep `ok` tied to script/runtime health.
+
+### What warrants a second pair of eyes
+
+- Determine whether approval requests should be expected at all under this exact transport/runtime profile, or if additional server configuration is required to externalize them.
+
+### What should be done in the future
+
+- Add a targeted configuration experiment matrix (approval policy + sandbox + model) to determine conditions under which inbound request events are emitted.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/06-live-inbound-request-probe.js` (`probeStatus`, request callbacks)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/05-live-inbound-request-probe-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- How to validate:
+  - re-run probe command from playbook and inspect `inbound-request-probe-complete`.
+
+### Technical details
+
+- Final observed completion payload included:
+  - `ok:true`
+  - `probeStatus:"no_inbound_request_observed"`
+  - `sawRequest:false`
+  - `respondedToRequest:false`

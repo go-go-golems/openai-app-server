@@ -99,4 +99,11 @@
 - [x] Extend `codex.connect()` session with `respond` and `respondError`
 - [x] Add tests for response sending and request->response harness flow
 - [x] Run `go test ./...` after response-path implementation
-- [ ] Prepare and gate next live scenario for real inbound request handling
+- [x] Prepare and gate next live scenario for real inbound request handling
+
+## Phase 11: Live Inbound Request Probe Scenario
+
+- [x] Add live probe script that attempts to trigger and handle inbound request(s)
+- [x] Add playbook with explicit probe success/failure markers
+- [x] Run `go test ./...` preflight before live probe run
+- [x] Execute live inbound-request probe run and capture outcome

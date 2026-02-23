@@ -213,3 +213,15 @@ Step 17: Added inbound request response plumbing (`rpc.respond` / `rpc.respondEr
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_run_command_test.go — Added request->response harness integration test
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Added and checked Phase 10 implementation tasks
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed implementation and validation notes
+
+
+## 2026-02-22
+
+Step 18: Ran live inbound-request probe scenario, captured no inbound request events in this mode, and normalized probe semantics to report this as explicit observational status.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/06-live-inbound-request-probe.js — Probe script with `probeStatus`-based completion semantics
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/05-live-inbound-request-probe-plan.md — Live probe command and expected outcomes
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 11 completed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Full run logs and interpretation
