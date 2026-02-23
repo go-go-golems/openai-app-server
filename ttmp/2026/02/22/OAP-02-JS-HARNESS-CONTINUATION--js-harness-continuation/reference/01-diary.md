@@ -607,3 +607,84 @@ This run did not surface inbound approval requests during the configured window,
 
 - Completion payload:
   - `{ "type":"autopilot-smoke-complete", "ok":true, "decisions":[] }`
+
+## Step 8: Implement Phase 6 Built-ins II and Prepare Review-Gate Live Scenario
+
+I implemented the second built-ins batch: `tdd-loop`, `review-gate`, and `auto-compaction`, each as policy modules with explicit controller interfaces so behavior can be unit-tested without live transport dependencies. This extends the framework from generic dispatch to practical higher-level orchestration loops.
+
+I also added a dedicated Phase 6 live-smoke script/playbook (`04-phase6-review-gate-smoke`) and ran full preflight tests. The ticket is now positioned at the next stop-gate before executing a real Phase 6 run.
+
+### Prompt Context
+
+**User prompt (verbatim):** "continue"
+
+**Assistant interpretation:** Keep progressing through remaining phases, committing as work lands and pausing only at required live-run gates.
+
+**Inferred user intent:** Maximize forward implementation momentum while preserving your explicit approval boundary before real runs.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added Phase 6 built-ins:
+  - `pkg/harness/builtin/tdd_loop.go`
+  - `pkg/harness/builtin/review_gate.go`
+  - `pkg/harness/builtin/auto_compact.go`
+- Extended built-in tests:
+  - `pkg/harness/builtin/builtin_test.go`
+- Added Phase 6 script/playbook assets:
+  - `scripts/04-phase6-review-gate-smoke.js`
+  - `playbooks/04-phase6-review-gate-smoke-plan.md`
+- Updated Phase 6 tasks progress.
+- Ran `go test ./...` preflight (pass).
+
+### Why
+
+- Phase 6 requires the three advanced built-ins and deterministic coverage before any real scenario is launched.
+
+### What worked
+
+- `tdd-loop` handles completed turns, runs tests through controller, and starts follow-up turns on failure up to iteration cap.
+- `review-gate` triggers review once per completed turn and conditionally starts follow-up turn.
+- `auto-compaction` triggers once above threshold and resets trigger state below configured reset ratio.
+- Test suite passes for all packages.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Controller-interface boundaries keep these built-ins predictable and easier to harden later with real adapter implementations.
+
+### What was tricky to build
+
+- Avoiding repeated side effects from repeated notifications for the same turn/thread.
+- Approach: per-turn/per-thread state maps with explicit dedup/reset behavior in each built-in.
+
+### What warrants a second pair of eyes
+
+- TDD loop prompt template wording may need tightening after first real run feedback to avoid verbose or ambiguous fix prompts.
+
+### What should be done in the future
+
+- Pause at Phase 6 stop-gate and request approval before executing `04-phase6-review-gate-smoke.js`.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/harness/builtin/tdd_loop.go`
+  - `openai-app-server/pkg/harness/builtin/review_gate.go`
+  - `openai-app-server/pkg/harness/builtin/auto_compact.go`
+  - `openai-app-server/pkg/harness/builtin/builtin_test.go`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/04-phase6-review-gate-smoke.js`
+- How to validate:
+  - `go test ./pkg/harness/builtin -v`
+  - `go test ./...`
+
+### Technical details
+
+- New built-in triggers:
+  - `tdd-loop`: `turn/completed`
+  - `review-gate`: `turn/completed`
+  - `auto-compaction`: `thread/tokenUsage/updated`

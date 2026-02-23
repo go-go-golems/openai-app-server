@@ -155,3 +155,212 @@ func TestPlanGateHarness(t *testing.T) {
 		t.Fatalf("expected interrupt call on rejected plan, got %#v", controller.calls)
 	}
 }
+
+type fakeTDDController struct {
+	runResults []TDDTestResult
+	runCalls   []string
+	followups  []struct {
+		threadID string
+		input    string
+	}
+}
+
+func (f *fakeTDDController) RunTests(_ context.Context, threadID string) (TDDTestResult, error) {
+	f.runCalls = append(f.runCalls, threadID)
+	if len(f.runResults) == 0 {
+		return TDDTestResult{Passed: true}, nil
+	}
+	out := f.runResults[0]
+	f.runResults = f.runResults[1:]
+	return out, nil
+}
+
+func (f *fakeTDDController) StartFollowupTurn(_ context.Context, threadID string, input string) error {
+	f.followups = append(f.followups, struct {
+		threadID string
+		input    string
+	}{threadID: threadID, input: input})
+	return nil
+}
+
+func TestTDDLoopHarness(t *testing.T) {
+	controller := &fakeTDDController{
+		runResults: []TDDTestResult{
+			{Passed: false, Output: "FAIL: test A"},
+			{Passed: true, Output: "ok"},
+		},
+	}
+	h := NewTDDLoopHarness(TDDLoopConfig{Controller: controller, MaxIterations: 2})
+	d := harness.Compose(h)
+
+	if err := d.DispatchNotification(context.Background(), harness.NotificationEvent{
+		Method: "turn/completed",
+		Params: map[string]any{"threadId": "thread-1", "turn": map[string]any{"id": "turn-1", "status": "completed"}},
+	}); err != nil {
+		t.Fatalf("DispatchNotification() error = %v", err)
+	}
+
+	if len(controller.followups) != 1 {
+		t.Fatalf("expected one followup turn, got %#v", controller.followups)
+	}
+	if controller.followups[0].threadID != "thread-1" {
+		t.Fatalf("unexpected followup thread id: %#v", controller.followups)
+	}
+
+	if err := d.DispatchNotification(context.Background(), harness.NotificationEvent{
+		Method: "turn/completed",
+		Params: map[string]any{"threadId": "thread-1", "turn": map[string]any{"id": "turn-2", "status": "completed"}},
+	}); err != nil {
+		t.Fatalf("DispatchNotification() error = %v", err)
+	}
+
+	if len(controller.followups) != 1 {
+		t.Fatalf("expected no additional followup after passing tests, got %#v", controller.followups)
+	}
+
+	if err := d.DispatchNotification(context.Background(), harness.NotificationEvent{
+		Method: "turn/completed",
+		Params: map[string]any{"threadId": "thread-1", "turn": map[string]any{"id": "turn-3", "status": "completed"}},
+	}); err != nil {
+		t.Fatalf("DispatchNotification() error = %v", err)
+	}
+
+	if len(controller.runCalls) != 2 {
+		t.Fatalf("expected max-iteration guard to stop third run, got calls=%d", len(controller.runCalls))
+	}
+}
+
+type fakeReviewController struct {
+	reviews []ReviewResult
+	calls   []struct {
+		threadID string
+		turnID   string
+	}
+	followups []struct {
+		threadID string
+		input    string
+	}
+}
+
+func (f *fakeReviewController) StartReview(_ context.Context, threadID string, turnID string) (ReviewResult, error) {
+	f.calls = append(f.calls, struct {
+		threadID string
+		turnID   string
+	}{threadID: threadID, turnID: turnID})
+	if len(f.reviews) == 0 {
+		return ReviewResult{}, nil
+	}
+	out := f.reviews[0]
+	f.reviews = f.reviews[1:]
+	return out, nil
+}
+
+func (f *fakeReviewController) StartFollowupTurn(_ context.Context, threadID string, input string) error {
+	f.followups = append(f.followups, struct {
+		threadID string
+		input    string
+	}{threadID: threadID, input: input})
+	return nil
+}
+
+func TestReviewGateHarness(t *testing.T) {
+	controller := &fakeReviewController{
+		reviews: []ReviewResult{
+			{NeedsFollowup: true, Summary: "Fix edge case"},
+			{NeedsFollowup: false, Summary: "Looks good"},
+		},
+	}
+	h := NewReviewGateHarness(ReviewGateConfig{Controller: controller})
+	d := harness.Compose(h)
+
+	if err := d.DispatchNotification(context.Background(), harness.NotificationEvent{
+		Method: "turn/completed",
+		Params: map[string]any{"threadId": "thread-1", "turn": map[string]any{"id": "turn-1", "status": "completed"}},
+	}); err != nil {
+		t.Fatalf("DispatchNotification() error = %v", err)
+	}
+	if len(controller.followups) != 1 {
+		t.Fatalf("expected followup for needs-followup review, got %#v", controller.followups)
+	}
+
+	if err := d.DispatchNotification(context.Background(), harness.NotificationEvent{
+		Method: "turn/completed",
+		Params: map[string]any{"threadId": "thread-1", "turn": map[string]any{"id": "turn-1", "status": "completed"}},
+	}); err != nil {
+		t.Fatalf("DispatchNotification() error = %v", err)
+	}
+	if len(controller.calls) != 1 {
+		t.Fatalf("expected duplicate turn completion to be ignored, got %#v", controller.calls)
+	}
+
+	if err := d.DispatchNotification(context.Background(), harness.NotificationEvent{
+		Method: "turn/completed",
+		Params: map[string]any{"threadId": "thread-1", "turn": map[string]any{"id": "turn-2", "status": "completed"}},
+	}); err != nil {
+		t.Fatalf("DispatchNotification() error = %v", err)
+	}
+	if len(controller.calls) != 2 {
+		t.Fatalf("expected second review call, got %#v", controller.calls)
+	}
+	if len(controller.followups) != 1 {
+		t.Fatalf("expected no extra followup for clean review, got %#v", controller.followups)
+	}
+}
+
+type fakeCompactController struct {
+	calls []string
+}
+
+func (f *fakeCompactController) StartCompaction(_ context.Context, threadID string) error {
+	f.calls = append(f.calls, threadID)
+	return nil
+}
+
+func TestAutoCompactHarness(t *testing.T) {
+	controller := &fakeCompactController{}
+	h := NewAutoCompactHarness(AutoCompactConfig{
+		Controller:      controller,
+		SoftLimitRatio:  0.7,
+		ResetBelowRatio: 0.5,
+	})
+	d := harness.Compose(h)
+
+	emit := func(total float64, window float64) {
+		err := d.DispatchNotification(context.Background(), harness.NotificationEvent{
+			Method: "thread/tokenUsage/updated",
+			Params: map[string]any{
+				"threadId": "thread-1",
+				"tokenUsage": map[string]any{
+					"modelContextWindow": window,
+					"total": map[string]any{
+						"totalTokens": total,
+					},
+				},
+			},
+		})
+		if err != nil {
+			t.Fatalf("DispatchNotification() error = %v", err)
+		}
+	}
+
+	emit(300, 1000)
+	if len(controller.calls) != 0 {
+		t.Fatalf("expected no compaction below threshold, got %#v", controller.calls)
+	}
+
+	emit(750, 1000)
+	if len(controller.calls) != 1 {
+		t.Fatalf("expected one compaction at threshold breach, got %#v", controller.calls)
+	}
+
+	emit(820, 1000)
+	if len(controller.calls) != 1 {
+		t.Fatalf("expected no duplicate compaction while still above threshold, got %#v", controller.calls)
+	}
+
+	emit(400, 1000)
+	emit(760, 1000)
+	if len(controller.calls) != 2 {
+		t.Fatalf("expected compaction to retrigger after reset, got %#v", controller.calls)
+	}
+}

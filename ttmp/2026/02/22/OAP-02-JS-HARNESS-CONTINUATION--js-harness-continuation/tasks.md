@@ -68,15 +68,16 @@
 
 ## Phase 6: Built-ins II (TDD/Review/Compaction)
 
-- [ ] Implement tdd-loop built-in harness
-- [ ] Implement review-gate built-in harness
-- [ ] Implement token-usage compaction built-in harness
-- [ ] Add deterministic tests for all Phase 6 built-ins
-- [ ] Run `go test ./...` preflight
+- [x] Implement tdd-loop built-in harness
+- [x] Implement review-gate built-in harness
+- [x] Implement token-usage compaction built-in harness
+- [x] Add deterministic tests for all Phase 6 built-ins
+- [x] Add Phase 6 smoke script/playbook assets under ticket `scripts/` and `playbooks/`
+- [x] Run `go test ./...` preflight
 - [ ] **STOP-GATE:** Explain Phase 6 live run command and wait for approval
 - [ ] Execute Phase 6 live run
-- [ ] Commit Phase 6 changes
-- [ ] Record Phase 6 diary/changelog updates
+- [x] Commit Phase 6 changes
+- [x] Record Phase 6 diary/changelog updates
 
 ## Phase 7: Reliability Hardening
 
