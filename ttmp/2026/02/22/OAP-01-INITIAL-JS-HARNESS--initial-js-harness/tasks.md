@@ -41,16 +41,16 @@
 
 ## Phase 4: JS Runtime and Harness API Skeleton
 
-- [ ] Add goja runtime bootstrap with runtimeowner runner
-- [ ] Expose host primitives (`rpc`, `ui`, `clock`) to JS
-- [ ] Add `require("codex")` module skeleton (`connect`, event subscription stubs)
-- [ ] Add JS runtime unit tests for module loading and callback threading invariants
-- [ ] Run `go test ./...` (runtime skeleton)
-- [ ] Commit Phase 4 runtime/harness skeleton changes
-- [ ] Record diary step for Phase 4
+- [x] Add goja runtime bootstrap with runtimeowner runner
+- [x] Expose host primitives (`rpc`, `ui`, `clock`) to JS
+- [x] Add `require("codex")` module skeleton (`connect`, event subscription stubs)
+- [x] Add JS runtime unit tests for module loading and callback threading invariants
+- [x] Run `go test ./...` (runtime skeleton)
+- [x] Commit Phase 4 runtime/harness skeleton changes
+- [x] Record diary step for Phase 4
 
 ## Phase 5: First Real Harness Test Gate
 
-- [ ] Prepare real harness test plan (script + target app-server transport)
+- [x] Prepare real harness test plan (script + target app-server transport)
 - [ ] **STOP-GATE:** Notify user immediately before launching first real harness test
 - [ ] (Pending user confirmation) Run first real harness test

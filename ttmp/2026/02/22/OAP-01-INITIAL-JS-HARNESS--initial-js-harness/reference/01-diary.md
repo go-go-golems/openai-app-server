@@ -36,8 +36,16 @@ RelatedFiles:
       Note: Phase-2 stdio transport skeleton
     - Path: openai-app-server/pkg/config/defaults.go
       Note: Phase-1 defaults implementation
+    - Path: openai-app-server/pkg/js/module_codex.go
+      Note: Phase-4 codex module implementation
+    - Path: openai-app-server/pkg/js/runtime.go
+      Note: Phase-4 runtime implementation
+    - Path: openai-app-server/pkg/js/runtime_test.go
+      Note: Phase-4 runtime tests
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md
       Note: Primary analysis outcome captured in this diary step
+    - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md
+      Note: Phase-5 pre-flight playbook prepared before stop-gate
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md
       Note: Imported prompt and design source under review
 ExternalSources:
@@ -47,6 +55,8 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Maintain a step-by-step implementation and analysis history with commands, failures, and review guidance.
 WhenToUse: Read before continuing implementation to understand decisions, risks, and validation paths.
 ---
+
+
 
 
 
@@ -542,4 +552,179 @@ The phase-3 test verifies the full command path (`root -> thread list -> client 
   - `{"threads":[{"id":"thread-1","status":"active"},{"id":"thread-2","status":"completed"}]}`
 - Outbound method sequence asserted in test:
   - `initialize` -> `initialized` -> `thread/list`
+
+
+## Step 6: Phase 4 JS Runtime + Codex Module Skeleton
+
+I implemented the initial goja runtime host package (`pkg/js`) with runtimeowner-backed execution, host primitives under `__host`, and a `require("codex")` module skeleton. This is the first runnable JS runtime substrate for harness-style scripts in this repository.
+
+I kept this phase intentionally skeletal but real: it supports module loading, host primitive registration, async request/notify wrappers, and callback registration/dispatch paths, with tests validating module availability and callback dispatch behavior.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 3)
+
+**Assistant interpretation:** Continue incremental implementation with tests and commits while deferring any first live harness run.
+
+**Inferred user intent:** Reach a technically meaningful runtime milestone before the real harness execution gate.
+
+**Commit (code):** c0c8cc9d089129212dfb4c0a7dc511b84b35f806 — "Add goja runtime host primitives and codex module skeleton"
+
+### What I did
+
+- Added JS runtime package:
+  - `pkg/js/runtime.go`
+  - creates `goja.Runtime`, `eventloop`, and `runtimeowner.Runner`
+  - installs host primitives:
+    - `__host.rpc.request`
+    - `__host.rpc.notify`
+    - `__host.rpc.onNotification`
+    - `__host.rpc.onRequest`
+    - `__host.ui.emit`
+    - `__host.ui.onEvent`
+    - `__host.clock.nowMs`
+    - `__host.clock.sleep`
+- Added codex module skeleton:
+  - `pkg/js/module_codex.go`
+  - `require("codex")` exports:
+    - `version`
+    - `connect()` returning session object with request/notify/handler registration stubs
+- Added runtime tests:
+  - `pkg/js/runtime_test.go`
+  - `TestRuntimeInstallsHostAndCodexModule`
+  - `TestRuntimeNotificationCallbackDispatch`
+- Updated dependencies (`go.mod`/`go.sum`) for goja/goja_nodejs/runtimeowner imports.
+- Ran `go test ./...` and confirmed pass.
+
+### Why
+
+- The runtime layer is required before any genuine harness script execution can be meaningful.
+- Owner-thread callback dispatch is a critical safety invariant that should be tested before we expand API surface.
+
+### What worked
+
+- `require("codex")` and `__host` primitives are available in runtime tests.
+- Notification callback registration + dispatch through runtime methods worked and updated JS state as expected.
+- Full test suite passed with new runtime package included.
+
+### What didn't work
+
+- N/A for this step; no blocking failures during implementation.
+
+### What I learned
+
+- The runtimeowner wrapper cleanly supports both synchronous script evaluation and async callback settlement paths.
+- Registering handlers via shared helper (`registerHandler`) reduced duplication across host/module APIs.
+
+### What was tricky to build
+
+- The sharp edge was ensuring async promise settlement always hops back to the owner thread after goroutine work.
+- Symptom: direct settlement from background goroutine would violate goja thread-safety.
+- Approach: all resolve/reject paths post back via `runtimeowner.Runner.Post`.
+
+### What warrants a second pair of eyes
+
+- The current `clock.sleep` implementation is functional but simplistic; review if cancellation should be plumbed through phase-5+.
+- `StdioTransport.Recv` and runtime async patterns should be revisited together before real load testing.
+
+### What should be done in the future
+
+- Prepare first real harness test plan and stop at gate for explicit user confirmation before execution.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/js/runtime.go` (`NewRuntime`, `installHostPrimitives`, `EmitRPCNotification`)
+  - `openai-app-server/pkg/js/module_codex.go` (`registerCodexModule`)
+  - `openai-app-server/pkg/js/runtime_test.go` (module + callback tests)
+- How to validate:
+  - `go test ./pkg/js -count=1`
+  - `go test ./...`
+
+### Technical details
+
+- Runtime bootstrap sequence:
+  - event loop start
+  - runtimeowner runner init
+  - host primitive installation on owner thread
+  - codex module registration and `require` enable on owner thread
+- Callback dispatch path:
+  - `EmitRPCNotification` posts to owner thread
+  - invokes registered goja callables with `{method, params}` payload
+
+
+## Step 7: Phase 5 Pre-Flight Plan and Stop-Gate Preparation
+
+I prepared a concrete first real harness test playbook and updated the task plan to reflect that preparation is complete. No live harness test was launched in this step.
+
+This step exists to enforce the requested execution gate: everything is ready for the first real harness run, but execution is paused for explicit user confirmation.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 3)
+
+**Assistant interpretation:** Prepare for the first real harness test but stop and notify before executing it.
+
+**Inferred user intent:** Keep control over when the first live harness run happens.
+
+**Commit (code):** N/A in this step (documentation/task-gate preparation only; commit pending with docs batch)
+
+### What I did
+
+- Added playbook document:
+  - `playbook/01-first-real-harness-test-plan.md`
+- Playbook includes:
+  - pre-flight assumptions,
+  - concrete command sequence,
+  - explicit stop-gate command boundary,
+  - exit criteria and failure modes,
+  - post-run bookkeeping checklist.
+- Updated `tasks.md`:
+  - marked phase-5 planning task complete,
+  - left stop-gate and execution tasks pending.
+
+### Why
+
+- A pre-defined playbook avoids improvisation during the first live run and makes failure diagnosis cleaner.
+- Explicitly separating “prepared” from “executed” matches the control requirement from the user prompt.
+
+### What worked
+
+- Ticket now has a dedicated operational playbook for first live harness run.
+- Task board accurately reflects readiness and pending stop-gate confirmation.
+
+### What didn't work
+
+- N/A.
+
+### What I learned
+
+- The first live harness run is better treated as an operation with entry/exit criteria, not just another CLI command.
+
+### What was tricky to build
+
+- The main challenge was keeping momentum while still respecting the stop-gate boundary.
+- Symptom: implementation tasks naturally flow into execution.
+- Approach: codified execution steps in playbook, then halted before command execution.
+
+### What warrants a second pair of eyes
+
+- Confirm the target app-server invocation (`codex-app-server --stdio-jsonl` style) matches the actual runtime environment before unpausing.
+
+### What should be done in the future
+
+- On user confirmation, execute the playbook command sequence and record full outcomes in a new diary step.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- How to validate:
+  - Verify phase-5 planning task is checked while stop-gate remains unchecked.
+
+### Technical details
+
+- No runtime commands executed in this step beyond documentation/tooling updates.
+- Live harness command is documented but intentionally not run.
 

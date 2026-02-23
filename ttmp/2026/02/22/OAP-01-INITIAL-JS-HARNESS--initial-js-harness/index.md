@@ -12,6 +12,8 @@ Owners: []
 RelatedFiles:
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md
       Note: Primary architecture document
+    - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md
+      Note: Operational playbook for first live harness run
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md
       Note: Ongoing implementation diary
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md
@@ -23,6 +25,7 @@ LastUpdated: 2026-02-22T20:43:05.306940261-05:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 

@@ -58,6 +58,12 @@ RelatedFiles:
       Note: Implemented stdio transport skeleton
     - Path: openai-app-server/pkg/config/defaults.go
       Note: Implemented transport/session defaults
+    - Path: openai-app-server/pkg/js/module_codex.go
+      Note: Phase-4 codex module skeleton
+    - Path: openai-app-server/pkg/js/runtime.go
+      Note: Phase-4 runtime bootstrap and host primitives
+    - Path: openai-app-server/pkg/js/runtime_test.go
+      Note: Phase-4 runtime unit tests
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md
       Note: Imported requirements and API baseline
 ExternalSources:
@@ -67,6 +73,7 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Design the first production-ready JS harness for Codex App Server in this repository.
 WhenToUse: Use as the implementation blueprint for building openai-app-server from the current scaffold.
 ---
+
 
 
 

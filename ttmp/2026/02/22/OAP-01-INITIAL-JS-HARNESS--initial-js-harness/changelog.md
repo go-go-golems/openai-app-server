@@ -62,3 +62,24 @@ Step 5: Completed Phase 3 CLI validation by wiring thread list to codexrpc, addi
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/thread_read_command.go — Thread read skeleton command
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/memory_transport.go — Test transport implementation
 
+
+## 2026-02-22
+
+Step 7: Prepared first real harness test playbook and paused at stop-gate before live execution.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md — Prepared but not executed live harness test procedure
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Stop-gate status updated
+
+
+## 2026-02-22
+
+Step 6: Completed Phase 4 JS runtime host primitives and codex module skeleton with runtime tests (commit c0c8cc9d089129212dfb4c0a7dc511b84b35f806).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_codex.go — codex require module skeleton
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime.go — Runtime bootstrap and __host primitives
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime_test.go — Runtime module/callback tests
+
