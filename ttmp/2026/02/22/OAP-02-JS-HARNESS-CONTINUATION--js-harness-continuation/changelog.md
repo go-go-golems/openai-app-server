@@ -109,3 +109,29 @@ Step 8: Implemented Phase 6 built-ins (tdd-loop/review-gate/auto-compaction), ad
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/04-phase6-review-gate-smoke.js — Phase 6 live scenario script
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 6 pre-run tasks updated
 
+
+## 2026-02-22
+
+Step 9: Executed Phase 6 review-gate smoke run at live gate; command completed with ok:true and no runtime/protocol errors, though review branch was not activated in-window.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/04-phase6-review-gate-smoke-plan.md — Phase 6 run plan used
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/04-phase6-review-gate-smoke.js — Live script executed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 6 stop-gate and execution tasks checked
+
+
+## 2026-02-22
+
+Step 10: Implemented Phase 7 reliability hardening with retry/backoff helper, bounded client event buffers, initialize opt-out notification capability, and fault-injection style codexrpc tests.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_run_command.go — CLI opt-out notification methods flag wiring
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/client.go — Event buffer retention controls and snapshots
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/initialize.go — Initialize parameter builder with opt-out capabilities
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/reliability_test.go — Retry and bounded-buffer tests
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/retry.go — Retry/backoff and RequestWithRetry support
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/config/defaults.go — Default opt-out methods support via env
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 7 tasks updated
+

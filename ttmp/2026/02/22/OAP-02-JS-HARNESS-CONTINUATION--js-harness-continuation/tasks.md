@@ -74,20 +74,20 @@
 - [x] Add deterministic tests for all Phase 6 built-ins
 - [x] Add Phase 6 smoke script/playbook assets under ticket `scripts/` and `playbooks/`
 - [x] Run `go test ./...` preflight
-- [ ] **STOP-GATE:** Explain Phase 6 live run command and wait for approval
-- [ ] Execute Phase 6 live run
+- [x] **STOP-GATE:** Explain Phase 6 live run command and wait for approval
+- [x] Execute Phase 6 live run
 - [x] Commit Phase 6 changes
 - [x] Record Phase 6 diary/changelog updates
 
 ## Phase 7: Reliability Hardening
 
-- [ ] Add retry/backoff helper for retryable RPC/transport failures
-- [ ] Add bounded event buffer/retention controls
-- [ ] Add notification opt-out capability in initialize params
-- [ ] Add fault-injection tests for retry and buffering behavior
-- [ ] Run `go test ./...` for Phase 7
-- [ ] Commit Phase 7 changes
-- [ ] Record Phase 7 diary/changelog updates
+- [x] Add retry/backoff helper for retryable RPC/transport failures
+- [x] Add bounded event buffer/retention controls
+- [x] Add notification opt-out capability in initialize params
+- [x] Add fault-injection tests for retry and buffering behavior
+- [x] Run `go test ./...` for Phase 7
+- [x] Commit Phase 7 changes
+- [x] Record Phase 7 diary/changelog updates
 
 ## Phase 8: CLI and Docs Completion
 

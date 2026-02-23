@@ -28,6 +28,7 @@ type harnessRunSettings struct {
 	Transport           string `glazed:"transport"`
 	StdioCommand        string `glazed:"stdio-command"`
 	StdioArgs           string `glazed:"stdio-args"`
+	OptOutNotifications string `glazed:"opt-out-notification-methods"`
 	Model               string `glazed:"model"`
 	Cwd                 string `glazed:"cwd"`
 	ApprovalPolicy      string `glazed:"approval-policy"`
@@ -116,13 +117,13 @@ var newHarnessRunClient = func(ctx context.Context, s *harnessRunSettings) (*cod
 		return nil, err
 	}
 	client := codexrpc.NewClient(transport)
-	if err := client.Connect(ctx, map[string]any{
-		"clientInfo": map[string]any{
-			"name":    "openai-app-server",
-			"title":   "OpenAI App Server Harness Runner",
-			"version": "0.1.0",
-		},
-	}); err != nil {
+	initParams := codexrpc.BuildInitializeParams(codexrpc.InitializeOptions{
+		ClientName:                "openai-app-server",
+		ClientTitle:               "OpenAI App Server Harness Runner",
+		ClientVersion:             "0.1.0",
+		OptOutNotificationMethods: splitCSVArg(s.OptOutNotifications),
+	})
+	if err := client.Connect(ctx, initParams); err != nil {
 		_ = client.Close()
 		return nil, err
 	}
@@ -147,6 +148,7 @@ func newHarnessRunCommand(defaults config.Defaults) (*harnessRunCommand, error) 
 			fields.New("transport", fields.TypeString, fields.WithDefault(defaults.Transport), fields.WithHelp("Transport backend: stdio|websocket")),
 			fields.New("stdio-command", fields.TypeString, fields.WithDefault(defaults.StdioCommand), fields.WithHelp("Stdio command for app-server process")),
 			fields.New("stdio-args", fields.TypeString, fields.WithDefault(strings.Join(defaults.StdioArgs, " ")), fields.WithHelp("Stdio command arguments (space-separated)")),
+			fields.New("opt-out-notification-methods", fields.TypeString, fields.WithDefault(strings.Join(defaults.OptOutNotificationMethods, ",")), fields.WithHelp("Comma-separated initialize.capabilities.optOutNotificationMethods")),
 			fields.New("model", fields.TypeString, fields.WithDefault(defaults.Model), fields.WithHelp("Default model for new thread sessions")),
 			fields.New("cwd", fields.TypeString, fields.WithDefault(defaults.Cwd), fields.WithHelp("Working directory for thread sessions")),
 			fields.New("approval-policy", fields.TypeString, fields.WithDefault(defaults.ApprovalPolicy), fields.WithHelp("Approval policy (phase-1 placeholder)")),
@@ -178,6 +180,7 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 	fmt.Printf("transport=%s\n", s.Transport)
 	fmt.Printf("stdio.command=%s\n", s.StdioCommand)
 	fmt.Printf("stdio.args=%s\n", s.StdioArgs)
+	fmt.Printf("opt-out-notification-methods=%s\n", s.OptOutNotifications)
 	fmt.Printf("model=%s\n", s.Model)
 	fmt.Printf("cwd=%s\n", s.Cwd)
 	fmt.Printf("approval-policy=%s\n", s.ApprovalPolicy)

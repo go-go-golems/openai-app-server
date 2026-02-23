@@ -22,12 +22,13 @@ type threadReadCommand struct {
 var _ cmds.BareCommand = (*threadReadCommand)(nil)
 
 type threadReadSettings struct {
-	Transport    string `glazed:"transport"`
-	StdioCommand string `glazed:"stdio-command"`
-	StdioArgs    string `glazed:"stdio-args"`
-	TimeoutMS    int    `glazed:"timeout-ms"`
-	ThreadID     string `glazed:"thread-id"`
-	IncludeTurns bool   `glazed:"include-turns"`
+	Transport           string `glazed:"transport"`
+	StdioCommand        string `glazed:"stdio-command"`
+	StdioArgs           string `glazed:"stdio-args"`
+	OptOutNotifications string `glazed:"opt-out-notification-methods"`
+	TimeoutMS           int    `glazed:"timeout-ms"`
+	ThreadID            string `glazed:"thread-id"`
+	IncludeTurns        bool   `glazed:"include-turns"`
 }
 
 var newThreadReadClient = func(ctx context.Context, s *threadReadSettings) (*codexrpc.Client, error) {
@@ -45,12 +46,12 @@ var newThreadReadClient = func(ctx context.Context, s *threadReadSettings) (*cod
 		return nil, err
 	}
 	client := codexrpc.NewClient(transport)
-	if err := client.Connect(ctx, map[string]any{
-		"clientInfo": map[string]any{
-			"name":    "openai-app-server",
-			"version": "0.1.0",
-		},
-	}); err != nil {
+	initParams := codexrpc.BuildInitializeParams(codexrpc.InitializeOptions{
+		ClientName:                "openai-app-server",
+		ClientVersion:             "0.1.0",
+		OptOutNotificationMethods: splitCSVArg(s.OptOutNotifications),
+	})
+	if err := client.Connect(ctx, initParams); err != nil {
 		_ = client.Close()
 		return nil, err
 	}
@@ -66,6 +67,7 @@ func newThreadReadCommand(defaults config.Defaults) (*threadReadCommand, error) 
 			fields.New("transport", fields.TypeString, fields.WithDefault(defaults.Transport), fields.WithHelp("Transport backend: stdio|websocket")),
 			fields.New("stdio-command", fields.TypeString, fields.WithDefault(defaults.StdioCommand), fields.WithHelp("Stdio command for app-server process")),
 			fields.New("stdio-args", fields.TypeString, fields.WithDefault(""), fields.WithHelp("Stdio command arguments (space-separated)")),
+			fields.New("opt-out-notification-methods", fields.TypeString, fields.WithDefault(strings.Join(defaults.OptOutNotificationMethods, ",")), fields.WithHelp("Comma-separated initialize.capabilities.optOutNotificationMethods")),
 			fields.New("timeout-ms", fields.TypeInteger, fields.WithDefault(15000), fields.WithHelp("Request timeout in milliseconds")),
 			fields.New("thread-id", fields.TypeString, fields.WithHelp("Thread identifier to read")),
 			fields.New("include-turns", fields.TypeBool, fields.WithDefault(false), fields.WithHelp("Include turn data in read output")),

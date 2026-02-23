@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type handshakeState int
@@ -19,6 +20,21 @@ const (
 
 type NotificationHandler func(ctx context.Context, msg *Message)
 type RequestHandler func(ctx context.Context, msg *Message)
+
+type EventBufferConfig struct {
+	MaxNotifications int
+	MaxRequests      int
+}
+
+type ClientOptions struct {
+	EventBuffer EventBufferConfig
+}
+
+type EventRecord struct {
+	Timestamp time.Time
+	Method    string
+	ID        any
+}
 
 // Client manages JSON-RPC request/response routing and handshake sequencing.
 type Client struct {
@@ -38,19 +54,42 @@ type Client struct {
 	requestMu sync.RWMutex
 	requests  map[string][]RequestHandler
 
+	historyMu             sync.RWMutex
+	maxNotifications      int
+	maxRequests           int
+	notificationEventRing []EventRecord
+	requestEventRing      []EventRecord
+
 	startOnce sync.Once
 	closeOnce sync.Once
 	done      chan struct{}
 }
 
 func NewClient(transport Transport) *Client {
+	return NewClientWithOptions(transport, ClientOptions{})
+}
+
+func NewClientWithOptions(transport Transport, opts ClientOptions) *Client {
+	maxNotifications := opts.EventBuffer.MaxNotifications
+	if maxNotifications <= 0 {
+		maxNotifications = 1000
+	}
+	maxRequests := opts.EventBuffer.MaxRequests
+	if maxRequests <= 0 {
+		maxRequests = 500
+	}
+
 	return &Client{
-		transport:     transport,
-		state:         stateNew,
-		pending:       map[string]chan *Message{},
-		notifications: map[string][]NotificationHandler{},
-		requests:      map[string][]RequestHandler{},
-		done:          make(chan struct{}),
+		transport:             transport,
+		state:                 stateNew,
+		pending:               map[string]chan *Message{},
+		notifications:         map[string][]NotificationHandler{},
+		requests:              map[string][]RequestHandler{},
+		maxNotifications:      maxNotifications,
+		maxRequests:           maxRequests,
+		notificationEventRing: []EventRecord{},
+		requestEventRing:      []EventRecord{},
+		done:                  make(chan struct{}),
 	}
 }
 
@@ -264,6 +303,8 @@ func (c *Client) dispatchResponse(msg *Message) {
 }
 
 func (c *Client) dispatchNotification(msg *Message) {
+	c.recordNotification(msg)
+
 	c.notificationMu.RLock()
 	handlers := append([]NotificationHandler{}, c.notifications[msg.Method]...)
 	handlers = append(handlers, c.notifications["*"]...)
@@ -277,6 +318,8 @@ func (c *Client) dispatchNotification(msg *Message) {
 }
 
 func (c *Client) dispatchRequest(msg *Message) {
+	c.recordRequest(msg)
+
 	c.requestMu.RLock()
 	handlers := append([]RequestHandler{}, c.requests[msg.Method]...)
 	handlers = append(handlers, c.requests["*"]...)
@@ -335,6 +378,56 @@ func (c *Client) setState(s handshakeState) {
 
 func (c *Client) isClosed() bool {
 	return c.getState() == stateClosed
+}
+
+func (c *Client) RecentNotifications() []EventRecord {
+	c.historyMu.RLock()
+	defer c.historyMu.RUnlock()
+	out := make([]EventRecord, len(c.notificationEventRing))
+	copy(out, c.notificationEventRing)
+	return out
+}
+
+func (c *Client) RecentRequests() []EventRecord {
+	c.historyMu.RLock()
+	defer c.historyMu.RUnlock()
+	out := make([]EventRecord, len(c.requestEventRing))
+	copy(out, c.requestEventRing)
+	return out
+}
+
+func (c *Client) recordNotification(msg *Message) {
+	if msg == nil {
+		return
+	}
+	c.historyMu.Lock()
+	defer c.historyMu.Unlock()
+
+	c.notificationEventRing = append(c.notificationEventRing, EventRecord{
+		Timestamp: time.Now(),
+		Method:    msg.Method,
+		ID:        msg.ID,
+	})
+	if len(c.notificationEventRing) > c.maxNotifications {
+		c.notificationEventRing = c.notificationEventRing[len(c.notificationEventRing)-c.maxNotifications:]
+	}
+}
+
+func (c *Client) recordRequest(msg *Message) {
+	if msg == nil {
+		return
+	}
+	c.historyMu.Lock()
+	defer c.historyMu.Unlock()
+
+	c.requestEventRing = append(c.requestEventRing, EventRecord{
+		Timestamp: time.Now(),
+		Method:    msg.Method,
+		ID:        msg.ID,
+	})
+	if len(c.requestEventRing) > c.maxRequests {
+		c.requestEventRing = c.requestEventRing[len(c.requestEventRing)-c.maxRequests:]
+	}
 }
 
 func idKey(id any) string {

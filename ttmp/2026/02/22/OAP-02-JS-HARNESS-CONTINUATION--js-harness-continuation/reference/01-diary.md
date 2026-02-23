@@ -688,3 +688,155 @@ I also added a dedicated Phase 6 live-smoke script/playbook (`04-phase6-review-g
   - `tdd-loop`: `turn/completed`
   - `review-gate`: `turn/completed`
   - `auto-compaction`: `thread/tokenUsage/updated`
+
+## Step 9: Execute Phase 6 Real Run Gate (Review-Gate Smoke)
+
+I executed the Phase 6 review-gate smoke script after your approval. The run completed successfully with `ok:true` and matched the required wait-gate event.
+
+In this run window, `turn/completed` was not observed by the script before completion timeout logic, so review/follow-up branches did not fire (`handledTurnId` remained empty). This still validates script execution path and wait-gate behavior, but not the deeper review-trigger branch.
+
+### Prompt Context
+
+**User prompt (verbatim):** "continue"
+
+**Assistant interpretation:** Proceed through the next approved gate and continue implementation.
+
+**Inferred user intent:** Keep execution moving with no unnecessary pauses.
+
+**Commit (code):** pending
+
+### What I did
+
+- Executed:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/04-phase6-review-gate-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 260000 --settle-ms 1000 --wait-for-ui-type phase6-review-gate-smoke-complete --wait-for-ui-timeout-ms 220000 --fail-on-wait-ui-ok-false`
+- Observed completion payload:
+  - `{"type":"phase6-review-gate-smoke-complete","ok":true,"handledTurnId":"","followupStarted":false,"reviewResult":null}`
+
+### Why
+
+- Required to complete Phase 6 stop-gate execution before moving to reliability hardening.
+
+### What worked
+
+- Command and script completed without runtime/protocol errors.
+- Wait-gate matched expected completion marker.
+
+### What didn't work
+
+- Review/follow-up action path did not trigger in this run due missing observed completed-turn marker during script window.
+
+### What I learned
+
+- For this scenario, we likely need a longer wait or stronger trigger prompt to reliably drive completed-turn + review branch activation.
+
+### What was tricky to build
+
+- Distinguishing “execution success” from “policy branch coverage.”
+- Approach: record both explicitly and proceed with architecture tasks while leaving scenario tuning for later hardening.
+
+### What warrants a second pair of eyes
+
+- Phase 6 smoke timings/prompts may require calibration for stable branch coverage.
+
+### What should be done in the future
+
+- Continue with non-live Phase 7 implementation now; revisit richer live validation patterns in final full smoke phase.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/04-phase6-review-gate-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md`
+- How to validate:
+  - rerun the same command and inspect final completion payload.
+
+### Technical details
+
+- Final gate line:
+  - `wait-for-ui-type matched type=phase6-review-gate-smoke-complete`
+
+## Step 10: Implement Phase 7 Reliability Hardening (Retry, Bounded Buffers, Opt-Out Initialize Capabilities)
+
+I implemented the Phase 7 reliability layer in `codexrpc` and CLI wiring: retry/backoff helper for retryable response errors, bounded retention buffers for recent notifications/requests, and initialize capability support for notification opt-out methods.
+
+I also added fault-injection style tests for retry and event-buffer bounds plus initialize-params tests, then validated the full repository with `go test ./...`.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 9)
+
+**Assistant interpretation:** Continue implementation after the Phase 6 run gate.
+
+**Inferred user intent:** Advance through the remaining non-live phases before the final live validation gate.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added initialize parameter builder:
+  - `pkg/codexrpc/initialize.go`
+- Added retry helper and `RequestWithRetry`:
+  - `pkg/codexrpc/retry.go`
+- Added event buffer config/options and retention rings on client:
+  - `pkg/codexrpc/client.go`
+  - `NewClientWithOptions`, `RecentNotifications`, `RecentRequests`
+- Added reliability tests:
+  - `pkg/codexrpc/reliability_test.go`
+- Added opt-out defaults and CLI argument support:
+  - `pkg/config/defaults.go`
+  - `cmd/openai-app-server/args.go`
+  - `cmd/openai-app-server/harness_run_command.go`
+  - `cmd/openai-app-server/thread_list_command.go`
+  - `cmd/openai-app-server/thread_read_command.go`
+- Ran validation:
+  - `go test ./...` (pass)
+
+### Why
+
+- Phase 7 explicitly requires resilience controls and bounded retention before final production-facing CLI/docs completion.
+
+### What worked
+
+- Retry helper retried overloaded response errors and stopped on non-retryable codes.
+- Event retention bounds now cap stored request/notification history.
+- Initialize params now support `capabilities.optOutNotificationMethods` through CLI/defaults.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Building initialize payloads through a dedicated helper significantly reduces drift across command factories.
+
+### What was tricky to build
+
+- Adding new client constructor/options without breaking existing call sites and tests.
+- Approach: keep `NewClient` as default wrapper and add `NewClientWithOptions` for bounded history configuration.
+
+### What warrants a second pair of eyes
+
+- Whether default retention sizes (`1000` notifications, `500` requests) match expected operator usage.
+
+### What should be done in the future
+
+- Commit Phase 7 changes and start Phase 8 CLI/docs completion work.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/codexrpc/retry.go`
+  - `openai-app-server/pkg/codexrpc/client.go`
+  - `openai-app-server/pkg/codexrpc/initialize.go`
+  - `openai-app-server/pkg/codexrpc/reliability_test.go`
+  - `openai-app-server/cmd/openai-app-server/harness_run_command.go`
+- How to validate:
+  - `go test ./pkg/codexrpc -v`
+  - `go test ./...`
+
+### Technical details
+
+- Retryable RPC code currently handled:
+  - `-32001` (server overloaded)
+- Opt-out flag added to commands:
+  - `--opt-out-notification-methods` (comma-separated)
