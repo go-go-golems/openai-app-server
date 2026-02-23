@@ -2,6 +2,8 @@ package js
 
 import (
 	"context"
+	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
@@ -30,6 +32,43 @@ func (f fakeUIBridge) Emit(_ context.Context, _ any) error {
 	return nil
 }
 
+type capturedResponse struct {
+	id     any
+	result any
+}
+
+type recordingRPCBridge struct {
+	mu        sync.Mutex
+	responses []capturedResponse
+}
+
+func (r *recordingRPCBridge) Request(_ context.Context, method string, _ any) (any, error) {
+	return map[string]any{"ok": true, "method": method}, nil
+}
+
+func (r *recordingRPCBridge) Notify(_ context.Context, _ string, _ any) error {
+	return nil
+}
+
+func (r *recordingRPCBridge) Respond(_ context.Context, id any, result any) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.responses = append(r.responses, capturedResponse{id: id, result: result})
+	return nil
+}
+
+func (r *recordingRPCBridge) RespondError(_ context.Context, _ any, _ int, _ string, _ any) error {
+	return nil
+}
+
+func (r *recordingRPCBridge) snapshot() []capturedResponse {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]capturedResponse, len(r.responses))
+	copy(out, r.responses)
+	return out
+}
+
 func TestRuntimeInstallsHostAndCodexModule(t *testing.T) {
 	rt, err := NewRuntime(Options{
 		Name: "runtime-test",
@@ -45,12 +84,18 @@ func TestRuntimeInstallsHostAndCodexModule(t *testing.T) {
       const rpc = require("rpc");
       const ui = require("ui");
       const clock = require("clock");
+      const approval = require("approval");
       const codex = require("codex");
       if (typeof globalThis.__host !== "undefined") throw new Error("unexpected __host global");
       if (typeof rpc.request !== "function") throw new Error("missing rpc.request");
       if (typeof rpc.notify !== "function") throw new Error("missing rpc.notify");
       if (typeof rpc.respond !== "function") throw new Error("missing rpc.respond");
       if (typeof rpc.respondError !== "function") throw new Error("missing rpc.respondError");
+      if (typeof approval.accept !== "function") throw new Error("missing approval.accept");
+      if (typeof approval.acceptForSession !== "function") throw new Error("missing approval.acceptForSession");
+      if (typeof approval.decline !== "function") throw new Error("missing approval.decline");
+      if (typeof approval.cancel !== "function") throw new Error("missing approval.cancel");
+      if (typeof approval.acceptWithExecpolicyAmendment !== "function") throw new Error("missing approval.acceptWithExecpolicyAmendment");
       if (typeof ui.emit !== "function") throw new Error("missing ui.emit");
       if (typeof clock.nowMs !== "function") throw new Error("missing clock.nowMs");
       if (typeof clock.sleep !== "function") throw new Error("missing clock.sleep");
@@ -66,6 +111,51 @@ func TestRuntimeInstallsHostAndCodexModule(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RunString() error = %v", err)
 	}
+}
+
+func TestApprovalModuleDecisionResponses(t *testing.T) {
+	rpcBridge := &recordingRPCBridge{}
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-approval",
+		RPC:  rpcBridge,
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const approval = require("approval");
+      approval.accept("id-1");
+      approval.acceptForSession({ id: "id-2" });
+      approval.decline("id-3");
+      approval.cancel("id-4");
+      approval.acceptWithExecpolicyAmendment("id-5", ["curl", "-I"]);
+    `)
+	if err != nil {
+		t.Fatalf("RunString() error = %v", err)
+	}
+
+	got := rpcBridge.snapshot()
+	if len(got) != 5 {
+		t.Fatalf("expected 5 responses, got %d", len(got))
+	}
+
+	check := func(i int, wantID any, wantResult any) {
+		if got[i].id != wantID {
+			t.Fatalf("response[%d] id mismatch: got=%v want=%v", i, got[i].id, wantID)
+		}
+		if !reflect.DeepEqual(got[i].result, wantResult) {
+			t.Fatalf("response[%d] result mismatch: got=%#v want=%#v", i, got[i].result, wantResult)
+		}
+	}
+
+	check(0, "id-1", "accept")
+	check(1, "id-2", "acceptForSession")
+	check(2, "id-3", "decline")
+	check(3, "id-4", "cancel")
+	check(4, "id-5", map[string]any{"acceptWithExecpolicyAmendment": []any{"curl", "-I"}})
 }
 
 func TestRuntimeNotificationCallbackDispatch(t *testing.T) {

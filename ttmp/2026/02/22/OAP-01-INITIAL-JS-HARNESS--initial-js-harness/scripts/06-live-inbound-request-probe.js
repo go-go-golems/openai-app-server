@@ -1,5 +1,6 @@
 const codex = require("codex");
 const rpc = require("rpc");
+const approval = require("approval");
 const ui = require("ui");
 const clock = require("clock");
 
@@ -45,7 +46,11 @@ session.onRequest((evt) => {
   }
   ui.emit({ type: "inbound-request-probe-request", id, method, params: (evt && evt.params) || {} });
   try {
-    rpc.respond(id, { approved: true, decision: "approve", note: "auto-approved by probe harness" });
+    if (method === "item/commandExecution/requestApproval" || method === "item/fileChange/requestApproval") {
+      approval.acceptForSession(id);
+    } else {
+      rpc.respond(id, { accepted: true, source: "inbound-request-probe" });
+    }
     respondedToRequest = true;
     ui.emit({ type: "inbound-request-probe-response", ok: true, id, method });
   } catch (err) {

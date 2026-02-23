@@ -128,5 +128,15 @@
 - [x] Add sandbox-variant probe script under `ttmp/.../scripts/`
 - [x] Add playbook for sandbox-variant probe markers and command
 - [x] Run `go test ./...` preflight before sandbox-variant probe
-- [ ] **STOP-GATE:** Explain sandbox-variant script behavior + exact command and wait for approval
-- [ ] Execute sandbox-variant probe live run and capture outcome
+- [x] **STOP-GATE:** Explain sandbox-variant script behavior + exact command and wait for approval
+- [x] Execute sandbox-variant probe live run and capture outcome
+
+## Phase 15: Approval Decision API Hardening
+
+- [x] Add native `require(\"approval\")` module with explicit decision helpers
+- [x] Add runtime tests for approval helper response payloads
+- [x] Migrate live probe scripts to use `approval.acceptForSession` for approval requests
+- [x] Run `go test ./...` after approval API hardening
+- [x] Update playbooks/docs to reflect approval helper usage
+- [ ] **STOP-GATE:** Explain next real validation run and wait for approval
+- [ ] Execute real validation run to confirm no approval response decode errors

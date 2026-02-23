@@ -12,8 +12,8 @@ Owners: []
 RelatedFiles:
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/08-live-approval-matrix-probe.js
       Note: Matrix probe script for approvalPolicy/sandbox combinations
-    - Path: openai-app-server/pkg/js/module_rpc.go
-      Note: Request callback response path exercised when inbound requests are observed
+    - Path: openai-app-server/pkg/js/module_approval.go
+      Note: Approval decision helpers used to answer approval requests with valid enum values
 ExternalSources: []
 Summary: "Live matrix probe comparing approval/sandbox combinations for inbound request visibility."
 LastUpdated: 2026-02-23T05:55:00-05:00

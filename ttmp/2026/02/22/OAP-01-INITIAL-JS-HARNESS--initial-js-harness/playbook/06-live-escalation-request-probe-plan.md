@@ -12,8 +12,8 @@ Owners: []
 RelatedFiles:
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/07-live-escalation-request-probe.js
       Note: Probe script that attempts to provoke escalation/inbound request behavior via network command
-    - Path: openai-app-server/pkg/js/module_rpc.go
-      Note: `rpc.respond` path exercised when request events are observed
+    - Path: openai-app-server/pkg/js/module_approval.go
+      Note: Approval decision helpers used to answer approval requests with valid enum values
 ExternalSources: []
 Summary: "Follow-up live probe attempting to provoke inbound request flow via network command task."
 LastUpdated: 2026-02-23T05:20:00-05:00

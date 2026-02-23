@@ -1911,3 +1911,176 @@ This step intentionally stops before execution to preserve the required pre-run 
   - `on-request_danger-full-access`
 - Final marker:
   - `type:"sandbox-variant-probe-complete"`
+
+
+## Step 23: Executed Sandbox-Variant Matrix Real Run and Isolated Approval Decode Failure
+
+I executed the approved Phase 14 sandbox-variant matrix run with filtered notification output. The run completed successfully under wait-gated mode and produced clear per-case deltas, including observed inbound request callbacks in two sandbox variants.
+
+The run also exposed a concrete protocol mismatch in our auto-response payload for approval requests. The app-server logged a deserialization error indicating our response variant was invalid (`approve`), which directly guided the next hardening step.
+
+### Prompt Context
+
+**User prompt (verbatim):** "go ahead"
+
+**Assistant interpretation:** Execute the prepared Phase 14 live run immediately.
+
+**Inferred user intent:** Continue empirical validation and surface real runtime behavior before further design changes.
+
+**Commit (code):** pending
+
+### What I did
+
+- Ran live command:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 220000 --settle-ms 1000 --wait-for-ui-type sandbox-variant-probe-complete --wait-for-ui-timeout-ms 180000 --fail-on-wait-ui-ok-false`
+- Observed completion:
+  - `wait-for-ui-type matched type=sandbox-variant-probe-complete`
+  - `harness.run completed`
+- Captured final result payload:
+  - `ok:true`
+  - `sawAnyRequest:true`
+  - `totalRequestsObserved:2`
+  - case results:
+    - `on-request_workspace-write`: `requestDelta:0`, `status:"no_request_observed"`
+    - `on-request_read-only`: `requestDelta:1`, `status:"request_observed"`
+    - `on-request_danger-full-access`: `requestDelta:1`, `status:"request_observed"`
+- Captured protocol error signal during approval response handling:
+  - `failed to deserialize CommandExecutionRequestApprovalResponse: unknown variant 'approve', expected one of 'accept', 'acceptForSession', 'acceptWithExecpolicyAmendment', 'decline', 'cancel'`
+
+### Why
+
+- Needed direct live evidence of sandbox-dependent request surfacing and response-path correctness.
+
+### What worked
+
+- Filtered output made case-level outcomes and final marker easy to read.
+- Wait-gated completion remained deterministic.
+- Probe script confirmed inbound request callbacks can occur in certain sandbox variants.
+
+### What didn't work
+
+- Auto-response payload shape for approval requests was invalid, causing deserialization errors and declined command items.
+
+### What I learned
+
+- Approval response semantics require exact enum variants, not arbitrary structured objects.
+- Request callback visibility appears environment-dependent and correlated with sandbox configuration in this run.
+
+### What was tricky to build
+
+- Preserving enough event detail for diagnosis while avoiding the prior reasoning-delta flood.
+- Approach: keep lifecycle + command + request/response events, drop reasoning-token deltas.
+
+### What warrants a second pair of eyes
+
+- Whether `workspace-write` should ever surface approval requests in this transport profile or if this is expected behavior.
+
+### What should be done in the future
+
+- Harden the approval response API in JS so scripts cannot accidentally emit invalid decision payloads.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js` (`sandbox-variant-request`, response path)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 14 completion)
+- How to validate:
+  - re-run Phase 14 command and inspect completion payload + stderr lines.
+
+### Technical details
+
+- Final completion payload included:
+  - `interestingNotificationCount:106`
+  - `totalNotificationCount:4913`
+  - `totalRequestsObserved:2`
+  - per-case request deltas as listed above.
+
+
+## Step 24: Added Approval Decision Module and Migrated Probe Scripts
+
+I implemented an explicit `require("approval")` JS module to make approval decisions type-safe at the script layer. This prevents accidental payload mismatch by exposing concrete decision helpers that send the expected enum-like response values.
+
+I then migrated the live probe scripts to use `approval.acceptForSession(...)` when handling approval request methods, retained a generic fallback for non-approval request methods, and updated playbooks/tasks to reflect the new contract.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok,c ontinue"
+
+**Assistant interpretation:** Continue immediately after the run-stream explanation and keep progressing.
+
+**Inferred user intent:** Move from observation to corrective implementation without losing ticket traceability.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added new native module:
+  - `pkg/js/module_approval.go`
+  - exports: `accept`, `acceptForSession`, `acceptWithExecpolicyAmendment`, `decline`, `cancel`
+- Registered module in runtime:
+  - `pkg/js/runtime.go`
+- Extended runtime integration tests:
+  - `pkg/js/runtime_test.go`
+  - added module-presence assertions and `TestApprovalModuleDecisionResponses`
+- Migrated probe scripts to valid approval helper usage:
+  - `ttmp/.../scripts/06-live-inbound-request-probe.js`
+  - `ttmp/.../scripts/07-live-escalation-request-probe.js`
+  - `ttmp/.../scripts/08-live-approval-matrix-probe.js`
+  - `ttmp/.../scripts/09-live-sandbox-variant-probe.js`
+- Updated playbook metadata/docs to reflect approval helper path:
+  - `ttmp/.../playbook/06-live-escalation-request-probe-plan.md`
+  - `ttmp/.../playbook/07-live-approval-matrix-probe-plan.md`
+  - `ttmp/.../playbook/08-live-sandbox-variant-probe-plan.md`
+- Ran validation:
+  - `go test ./...` (pass)
+
+### Why
+
+- Needed to eliminate a recurring integration failure mode where scripts encode approval responses in an invalid format.
+
+### What worked
+
+- New module compiles and loads via `require("approval")`.
+- Runtime tests verify decision payloads are emitted as expected.
+- Probe scripts now encode approval decisions using dedicated helpers.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Centralizing response-shape logic behind a dedicated module significantly reduces script-level protocol risk.
+
+### What was tricky to build
+
+- Supporting both `id` and full request-object inputs ergonomically while keeping failures explicit.
+- Approach: helper extracts `id` from either primitive or object and throws clear type errors for malformed inputs.
+
+### What warrants a second pair of eyes
+
+- Confirm `acceptWithExecpolicyAmendment` payload shape against upstream app-server expectations in a live run.
+
+### What should be done in the future
+
+- Execute one targeted real validation run and verify decode errors disappear from stderr.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/js/module_approval.go` (`respondApprovalDecision`, `approvalRequestID`)
+  - `openai-app-server/pkg/js/runtime.go` (module registration)
+  - `openai-app-server/pkg/js/runtime_test.go` (`TestApprovalModuleDecisionResponses`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js`
+- How to validate:
+  - `go test ./...`
+
+### Technical details
+
+- Decision payloads now sent for approval methods are enum-like values:
+  - `"accept"`
+  - `"acceptForSession"`
+  - `"decline"`
+  - `"cancel"`
+  - `{ "acceptWithExecpolicyAmendment": [...] }`

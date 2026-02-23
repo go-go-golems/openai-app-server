@@ -70,6 +70,7 @@ func NewRuntime(opts Options) (*Runtime, error) {
 	registerRPCModule(reg, rt)
 	registerUIModule(reg, rt)
 	registerClockModule(reg, rt)
+	registerApprovalModule(reg, rt)
 
 	_, err := rt.runner.Call(context.Background(), "runtime.init", func(_ context.Context, vm *goja.Runtime) (any, error) {
 		reg.Enable(vm)

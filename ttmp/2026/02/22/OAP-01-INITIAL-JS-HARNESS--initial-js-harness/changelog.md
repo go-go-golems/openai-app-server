@@ -273,3 +273,33 @@ Step 22: Added Phase 14 sandbox-variant probe assets with filtered notification 
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md — Sandbox-variant run plan and exact command
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Added and partially checked Phase 14
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Step 22 prep details and stop-gate context
+
+
+## 2026-02-22
+
+Step 23: Executed Phase 14 sandbox-variant live run; completion succeeded and showed request callbacks in read-only/danger-full-access cases, while exposing approval response decode mismatch (`approve` variant invalid).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js — Live script executed against real transport
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md — Command and completion marker contract used
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 14 marked complete
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Step 23 run details and observations
+
+
+## 2026-02-22
+
+Step 24: Added `require("approval")` native module with explicit decision helpers, migrated live probe scripts to helper-based approval responses, and updated playbooks/tasks.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_approval.go — New native approval decision module
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime.go — Runtime module registration
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime_test.go — Approval module integration tests
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/06-live-inbound-request-probe.js — Migrated approval request response path
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/07-live-escalation-request-probe.js — Migrated approval request response path
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/08-live-approval-matrix-probe.js — Migrated approval request response path
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js — Migrated approval request response path
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/06-live-escalation-request-probe-plan.md — Updated to approval helper path
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/07-live-approval-matrix-probe-plan.md — Updated to approval helper path
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md — Updated expected-output checks
