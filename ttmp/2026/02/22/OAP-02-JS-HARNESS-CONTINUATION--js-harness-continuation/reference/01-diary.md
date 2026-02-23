@@ -23,7 +23,7 @@ RelatedFiles:
 ExternalSources:
     - https://developers.openai.com/codex/app-server/
 Summary: Implementation diary for OAP-02 continuation work after OAP-01 closure.
-LastUpdated: 2026-02-22T23:21:38-05:00
+LastUpdated: 2026-02-22T23:24:04-05:00
 WhatFor: Preserve an exact implementation trail while completing the remaining harness architecture scope.
 WhenToUse: Read before coding or reviewing OAP-02 work to understand current phase, decisions, and risk context.
 ---
@@ -992,3 +992,77 @@ I then validated the final full smoke script/playbook assets, confirmed their co
 
 - OAP-01 unexpected file left untouched by design:
   - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md`
+
+## Step 13: Execute Final Phase 8 Live Smoke Run and Capture Completion Outcome
+
+I executed the approved final full smoke run against the real app-server via stdio transport and confirmed the completion gate matched successfully. The run produced `final-full-smoke-complete` with `ok:true`.
+
+The same run also showed no approval requests during the window (`requestsObserved:0`) and no observed `turn/completed` event (`turnCompleted:false`), while `threads.read(threadId, true)` did succeed (`threadReadWorked:true`). This validates the wrapper + thread-read path in live execution, with approval branch coverage still scenario-dependent.
+
+### Prompt Context
+
+**User prompt (verbatim):** "run it"
+
+**Assistant interpretation:** Execute the final approved real harness smoke run now.
+
+**Inferred user intent:** Complete the final live validation gate before ticket closure steps.
+
+**Commit (code):** pending
+
+### What I did
+
+- Ran:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/05-final-full-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 300000 --settle-ms 1000 --wait-for-ui-type final-full-smoke-complete --wait-for-ui-timeout-ms 240000 --fail-on-wait-ui-ok-false`
+- Captured completion output:
+  - `ui.emit {"ok":true,"threadId":"019c88bc-63c8-7210-a4a7-37f7a318c938","type":"final-full-smoke-thread-read"}`
+  - `ui.emit {"ok":true,"summary":{"approvalsAccepted":0,"approvalsDeclined":0,"errors":[],"requestsObserved":0,"threadReadWorked":true,"turnCompleted":false},"threadId":"019c88bc-63c8-7210-a4a7-37f7a318c938","type":"final-full-smoke-complete"}`
+  - `wait-for-ui-type matched type=final-full-smoke-complete`
+  - `harness.run completed`
+- Updated Phase 8 tasks:
+  - stop-gate and execution items checked.
+
+### Why
+
+- This was the final required real harness execution gate in OAP-02.
+
+### What worked
+
+- Live run completed and matched required completion marker.
+- No runtime/protocol errors observed.
+- Thread-read validation succeeded.
+
+### What didn't work
+
+- Approval decision branch and turn completion observation were not triggered during this script window.
+
+### What I learned
+
+- Final smoke script validates core live harness flow, but deterministic approval/turn-branch coverage still needs a stronger forcing prompt if required as a hard assertion.
+
+### What was tricky to build
+
+- Interpreting success correctly when partial branches are naturally event-dependent.
+- Approach: treat `final-full-smoke-complete ok:true` + `threadReadWorked:true` + empty error list as pass criteria, and log branch-coverage gaps explicitly.
+
+### What warrants a second pair of eyes
+
+- Whether Phase 8 closure should accept this branch coverage level or require one additional targeted scenario script focused purely on approval-trigger certainty.
+
+### What should be done in the future
+
+- Complete publication to reMarkable.
+- Finalize closure commit and close OAP-02 ticket.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/05-final-full-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/05-final-full-smoke-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md`
+- How to validate:
+  - rerun the exact command and inspect `final-full-smoke-complete` payload.
+
+### Technical details
+
+- Final run thread id:
+  - `019c88bc-63c8-7210-a4a7-37f7a318c938`
