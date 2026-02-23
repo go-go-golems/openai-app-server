@@ -37,12 +37,21 @@ type capturedResponse struct {
 	result any
 }
 
+type capturedRequest struct {
+	method string
+	params any
+}
+
 type recordingRPCBridge struct {
 	mu        sync.Mutex
+	requests  []capturedRequest
 	responses []capturedResponse
 }
 
-func (r *recordingRPCBridge) Request(_ context.Context, method string, _ any) (any, error) {
+func (r *recordingRPCBridge) Request(_ context.Context, method string, params any) (any, error) {
+	r.mu.Lock()
+	r.requests = append(r.requests, capturedRequest{method: method, params: params})
+	r.mu.Unlock()
 	return map[string]any{"ok": true, "method": method}, nil
 }
 
@@ -66,6 +75,14 @@ func (r *recordingRPCBridge) snapshot() []capturedResponse {
 	defer r.mu.Unlock()
 	out := make([]capturedResponse, len(r.responses))
 	copy(out, r.responses)
+	return out
+}
+
+func (r *recordingRPCBridge) snapshotRequests() []capturedRequest {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]capturedRequest, len(r.requests))
+	copy(out, r.requests)
 	return out
 }
 
@@ -106,6 +123,12 @@ func TestRuntimeInstallsHostAndCodexModule(t *testing.T) {
       if (typeof session.respond !== "function") throw new Error("missing session.respond");
       if (typeof session.respondError !== "function") throw new Error("missing session.respondError");
       if (typeof session.onNotification !== "function") throw new Error("missing session.onNotification");
+      if (typeof session.threads !== "object") throw new Error("missing session.threads");
+      if (typeof session.threads.start !== "function") throw new Error("missing session.threads.start");
+      if (typeof session.threads.list !== "function") throw new Error("missing session.threads.list");
+      if (typeof session.threads.read !== "function") throw new Error("missing session.threads.read");
+      if (typeof session.threads.byId !== "function") throw new Error("missing session.threads.byId");
+      if (typeof session.thread !== "function") throw new Error("missing session.thread");
       if (codex.version !== "0.1.0") throw new Error("unexpected codex version");
     `)
 	if err != nil {
@@ -162,6 +185,123 @@ func TestApprovalModuleDecisionResponses(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestCodexSessionThreadWrappersRouteRequests(t *testing.T) {
+	rpcBridge := &recordingRPCBridge{}
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-thread-wrappers",
+		RPC:  rpcBridge,
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      const session = codex.connect();
+
+      session.threads.start({ model: "gpt-5", cwd: "/repo" });
+      session.threads.list({ limit: 5 });
+      session.threads.read("thread-abc", true);
+
+      const thread = session.thread("thread-abc");
+      thread.turn.start({ input: [{ type: "text", text: "hello" }] });
+      thread.turn.steer({ expectedTurnId: "turn-1", input: [{ type: "text", text: "continue" }] });
+      thread.turn.interrupt({ turnId: "turn-1" });
+      thread.review.start({ delivery: "inline" });
+
+      const nested = session.threads.byId({ thread: { id: "thread-nested" } });
+      nested.turn.start({ input: [{ type: "text", text: "nested" }] });
+    `)
+	if err != nil {
+		t.Fatalf("RunString() error = %v", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	var reqs []capturedRequest
+	for {
+		reqs = rpcBridge.snapshotRequests()
+		if len(reqs) >= 8 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for wrapper requests, got %d", len(reqs))
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	counts := map[string]int{}
+	for _, r := range reqs {
+		counts[r.method]++
+	}
+
+	expectedCounts := map[string]int{
+		"thread/start":   1,
+		"thread/list":    1,
+		"thread/read":    1,
+		"turn/start":     2,
+		"turn/steer":     1,
+		"turn/interrupt": 1,
+		"review/start":   1,
+	}
+	for method, want := range expectedCounts {
+		if counts[method] < want {
+			t.Fatalf("expected at least %d request(s) for %s, got %d", want, method, counts[method])
+		}
+	}
+
+	var sawReadThreadID bool
+	var sawReadIncludeTurns bool
+	var sawTurnStartABC bool
+	var sawTurnStartNested bool
+	var sawSteerABC bool
+	var sawInterruptABC bool
+	var sawReviewABC bool
+
+	for _, r := range reqs {
+		params, _ := r.params.(map[string]any)
+		switch r.method {
+		case "thread/read":
+			if params["threadId"] == "thread-abc" {
+				sawReadThreadID = true
+			}
+			if includeTurns, ok := params["includeTurns"].(bool); ok && includeTurns {
+				sawReadIncludeTurns = true
+			}
+		case "turn/start":
+			if params["threadId"] == "thread-abc" {
+				sawTurnStartABC = true
+			}
+			if params["threadId"] == "thread-nested" {
+				sawTurnStartNested = true
+			}
+		case "turn/steer":
+			if params["threadId"] == "thread-abc" {
+				sawSteerABC = true
+			}
+		case "turn/interrupt":
+			if params["threadId"] == "thread-abc" {
+				sawInterruptABC = true
+			}
+		case "review/start":
+			if params["threadId"] == "thread-abc" {
+				sawReviewABC = true
+			}
+		}
+	}
+
+	if !sawReadThreadID || !sawReadIncludeTurns {
+		t.Fatalf("thread/read wrapper did not normalize params correctly: %#v", reqs)
+	}
+	if !sawTurnStartABC || !sawTurnStartNested {
+		t.Fatalf("turn/start wrapper did not inject thread ids correctly: %#v", reqs)
+	}
+	if !sawSteerABC || !sawInterruptABC || !sawReviewABC {
+		t.Fatalf("thread handle wrappers missing threadId injection: %#v", reqs)
+	}
 }
 
 func TestRuntimeNotificationCallbackDispatch(t *testing.T) {

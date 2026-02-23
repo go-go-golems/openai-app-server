@@ -167,8 +167,6 @@ func (rt *Runtime) EmitUIEvent(event any) error {
 }
 
 func (rt *Runtime) rpcRequestPromise(vm *goja.Runtime, call goja.FunctionCall) goja.Value {
-	promise, resolve, reject := vm.NewPromise()
-
 	method := ""
 	if len(call.Arguments) > 0 {
 		method = call.Arguments[0].String()
@@ -177,6 +175,12 @@ func (rt *Runtime) rpcRequestPromise(vm *goja.Runtime, call goja.FunctionCall) g
 	if len(call.Arguments) > 1 {
 		params = call.Arguments[1].Export()
 	}
+
+	return rt.rpcRequestPromiseFrom(vm, method, params)
+}
+
+func (rt *Runtime) rpcRequestPromiseFrom(vm *goja.Runtime, method string, params any) goja.Value {
+	promise, resolve, reject := vm.NewPromise()
 
 	go func() {
 		if rt.rpc == nil {

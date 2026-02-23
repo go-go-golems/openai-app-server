@@ -42,3 +42,17 @@ Step 3: Implemented Phase 2 state projection package (models/store/projector) wi
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/state/store_test.go — Bounds and snapshot isolation tests
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 2 task progress updated
 
+
+## 2026-02-22
+
+Step 4: Completed Phase 3 wrapper API expansion (threads + thread handles), added wrapper runtime routing tests, and created first OAP-02 wrapper smoke script/playbook assets.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_codex.go — Added session/thread wrapper API surface and helper builders
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime.go — Added wrapper-oriented request promise helper
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime_test.go — Added wrapper method routing coverage
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/01-wrapper-api-smoke-plan.md — Wrapper smoke run plan and checks
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/01-wrapper-api-smoke.js — Initial wrapper smoke script
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 3 progress updated
+

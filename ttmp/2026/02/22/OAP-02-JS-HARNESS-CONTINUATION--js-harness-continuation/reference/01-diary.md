@@ -282,3 +282,94 @@ The implementation includes replay-style tests that project a representative seq
   - `thread/started`, `thread/updated`, `thread/tokenUsage/updated`
   - `turn/started`, `turn/completed`, `turn/updated`, `turn/diff/updated`, `turn/plan/updated`
   - `item/started`, `item/completed`, `item/updated`
+
+## Step 4: Implement Phase 3 JS Wrapper API Surface and Add Wrapper Script Assets
+
+I expanded the `codex` module session API with ergonomic wrapper methods for threads, turns, and reviews, then validated call routing with runtime tests. This completes the main Phase 3 coding objective and gives us a script/playbook pair under the new ticket for later live validation.
+
+As requested, I started writing script assets during continuation work rather than waiting for the final phase: `scripts/01-wrapper-api-smoke.js` and its companion playbook are now in OAP-02.
+
+### Prompt Context
+
+**User prompt (verbatim):** "are you planning on writing some scripts like in the first ticket? or only later?"
+
+**Assistant interpretation:** Clarify script timing and proceed with script authoring as implementation advances.
+
+**Inferred user intent:** Ensure script-based validation artifacts continue to be built progressively in OAP-02.
+
+**Commit (code):** pending
+
+### What I did
+
+- Extended `require("codex")` session surface in `pkg/js/module_codex.go`:
+  - `session.threads.start/list/read`
+  - `session.thread(id)` and `session.threads.byId(...)`
+  - thread handle helpers:
+    - `thread.turn.start`
+    - `thread.turn.steer`
+    - `thread.turn.interrupt`
+    - `thread.review.start`
+- Added runtime helper in `pkg/js/runtime.go`:
+  - `rpcRequestPromiseFrom(vm, method, params)` to support wrapper-originated requests.
+- Expanded runtime tests in `pkg/js/runtime_test.go`:
+  - method availability checks for wrappers
+  - call routing test verifying wrapper methods issue expected RPC methods and inject `threadId`.
+- Added ticket script and playbook assets:
+  - `scripts/01-wrapper-api-smoke.js`
+  - `playbooks/01-wrapper-api-smoke-plan.md`
+- Ran validation:
+  - `go test ./...` (pass)
+
+### Why
+
+- Wrapper APIs reduce harness author boilerplate and align OAP-02 with original architecture intent.
+- Early script assets keep operational validation incremental and reusable.
+
+### What worked
+
+- Wrapper methods route correctly to underlying RPC methods.
+- Thread-handle methods inject `threadId` consistently.
+- Runtime tests and full test suite pass.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Centralizing wrapper request dispatch through one runtime helper (`rpcRequestPromiseFrom`) keeps module code simple and testable.
+
+### What was tricky to build
+
+- Supporting multiple thread-id input forms (`string`, `{id}`, `{thread:{id}}`) while keeping behavior strict enough to fail fast when missing.
+- Approach: explicit thread-id extraction helper plus clear `TypeError` for invalid inputs.
+
+### What warrants a second pair of eyes
+
+- Whether to add an additional helper that returns a thread handle directly from `threads.start` response in a future refinement.
+
+### What should be done in the future
+
+- Commit Phase 3 changes and begin Phase 4 harness framework core.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/js/module_codex.go` (`buildCodexSession`, `buildThreadHandle`)
+  - `openai-app-server/pkg/js/runtime.go` (`rpcRequestPromiseFrom`)
+  - `openai-app-server/pkg/js/runtime_test.go` (`TestCodexSessionThreadWrappersRouteRequests`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/01-wrapper-api-smoke.js`
+- How to validate:
+  - `go test ./pkg/js -v`
+  - `go test ./...`
+
+### Technical details
+
+- Wrapper methods currently map to RPC methods:
+  - `threads.start -> thread/start`
+  - `threads.list -> thread/list`
+  - `threads.read -> thread/read`
+  - `thread.turn.start -> turn/start`
+  - `thread.turn.steer -> turn/steer`
+  - `thread.turn.interrupt -> turn/interrupt`
+  - `thread.review.start -> review/start`

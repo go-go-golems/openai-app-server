@@ -33,13 +33,15 @@
 
 ## Phase 3: JS Session Wrapper Expansion
 
-- [ ] Extend `require("codex")` session with `threads.start/list/read`
-- [ ] Add thread object helpers: `turn.start`, `turn.steer`, `turn.interrupt`
-- [ ] Add review helper wrapper: `thread.review.start`
-- [ ] Add runtime tests for wrapper API availability and call routing
-- [ ] Run `go test ./...` for Phase 3
-- [ ] Commit Phase 3 changes
-- [ ] Record Phase 3 diary/changelog updates
+- [x] Extend `require("codex")` session with `threads.start/list/read`
+- [x] Add thread object helpers: `turn.start`, `turn.steer`, `turn.interrupt`
+- [x] Add review helper wrapper: `thread.review.start`
+- [x] Add wrapper API smoke script under ticket `scripts/`
+- [x] Add wrapper API smoke playbook under ticket `playbooks/`
+- [x] Add runtime tests for wrapper API availability and call routing
+- [x] Run `go test ./...` for Phase 3
+- [x] Commit Phase 3 changes
+- [x] Record Phase 3 diary/changelog updates
 
 ## Phase 4: Harness Framework Core
 
