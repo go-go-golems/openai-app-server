@@ -48,14 +48,14 @@ tag-patch:
 
 release:
 	git push origin --tags
-	GOWORK=off GOPROXY=proxy.golang.org go list -m github.com/go-go-golems/XXX@$(shell svu current)
+	GOWORK=off GOPROXY=proxy.golang.org go list -m github.com/go-go-golems/openai-app-server@$(shell svu current)
 
 bump-glazed:
 	GOWORK=off go get github.com/go-go-golems/glazed@latest
 	GOWORK=off go get github.com/go-go-golems/clay@latest
 	GOWORK=off go mod tidy
 
-XXX_BINARY=$(shell which XXX)
+OPENAI_APP_SERVER_BINARY=$(shell which openai-app-server)
 install:
-	GOWORK=off go build -o ./dist/XXX ./cmd/XXX && \
-		cp ./dist/XXX $(XXX_BINARY)
+	GOWORK=off go build -o ./dist/openai-app-server ./cmd/openai-app-server && \
+		cp ./dist/openai-app-server $(OPENAI_APP_SERVER_BINARY)
