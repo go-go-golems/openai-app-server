@@ -74,3 +74,11 @@
 - [x] Run `go test ./...` preflight before live run
 - [x] **STOP-GATE:** Explain next real-run script behavior + exact command and wait for approval
 - [x] Execute module-API real harness run against live server (after approval)
+
+## Phase 8: Module-API Live Thread/Turn Scenario Gate
+
+- [x] Add module-API script for `thread/start` + `turn/start` flow under `ttmp/.../scripts/`
+- [x] Add playbook for thread/turn scenario with explicit success/failure markers
+- [x] Run `go test ./...` preflight before live run
+- [ ] **STOP-GATE:** Explain thread/turn script behavior + exact command and wait for approval
+- [ ] Execute thread/turn module-API live run against real server (after approval)

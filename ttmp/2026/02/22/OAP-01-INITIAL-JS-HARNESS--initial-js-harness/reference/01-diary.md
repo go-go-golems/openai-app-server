@@ -1133,3 +1133,77 @@ This validates that the post-`__host` runtime surface (`require("ui"|"rpc"|"cloc
   - `ui.emit {"count":0,...,"type":"module-api-thread-list"}`
   - `ui.emit {"ok":true,"type":"module-api-smoke-complete"}`
   - `harness.run completed`
+
+
+## Step 13: Prepared Next Live Gate for Thread/Turn Module Scenario
+
+I prepared the next real harness scenario focused on `thread/start` + `turn/start` using the module API (`require("rpc")`, `require("ui")`, `require("clock")`) and stopped before executing it. This stage adds deterministic script and playbook artifacts with explicit success/failure markers.
+
+The goal is to validate the next level of real behavior (thread + turn lifecycle and notification flow) while preserving the requested approval gate before live execution.
+
+### Prompt Context
+
+**User prompt (verbatim):** "continue until next harness run"
+
+**Assistant interpretation:** Keep progressing implementation and ticket tracking, but pause when reaching the next real harness execution boundary.
+
+**Inferred user intent:** Maintain momentum with full prep and documentation while retaining manual control over each live run.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added next phase tasks:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 8)
+- Added new script fixture:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js`
+- Added run plan:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/03-module-api-thread-turn-live-plan.md`
+- Ran preflight:
+  - `go test ./...` (pass)
+- Marked pre-run phase items complete; kept live-run gate items unchecked.
+
+### Why
+
+- Needed a concrete next-run target that exercises thread/turn lifecycle and notification handling beyond `thread/list`.
+
+### What worked
+
+- Script and playbook are now ticket-local and reviewable.
+- Preflight tests passed with no code regressions.
+
+### What didn't work
+
+- N/A
+
+### What I learned
+
+- Making thread/turn scripts resilient to response-shape variance (`id` vs nested ids) avoids brittle run gating.
+
+### What was tricky to build
+
+- Designing a script that is assertive enough for clear success criteria while tolerant of minor schema differences in live responses.
+- Approach: extract ids via fallback helpers and rely on explicit completion marker payload for pass/fail.
+
+### What warrants a second pair of eyes
+
+- Confirm the chosen `settle-ms` window (`6000`) is sufficient in this environment for notification visibility.
+
+### What should be done in the future
+
+- On approval, run the planned command and record exact emitted markers and any schema nuances.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/03-module-api-thread-turn-live-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- How to validate:
+  - `go test ./...`
+  - `test -f ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js`
+
+### Technical details
+
+- Next live-run command prepared (not executed in this step):
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 90000 --settle-ms 6000`
