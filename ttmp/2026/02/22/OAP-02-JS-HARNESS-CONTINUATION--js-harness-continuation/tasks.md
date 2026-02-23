@@ -45,14 +45,14 @@
 
 ## Phase 4: Harness Framework Core
 
-- [ ] Add `pkg/harness/context.go` with canonical handler context
-- [ ] Add `pkg/harness/dispatch.go` with notification/request dispatch pipeline
-- [ ] Add `pkg/harness/compose.go` with deterministic composition order
-- [ ] Add exactly-once request response guardrails and diagnostics
-- [ ] Add unit tests for ordering and one-response enforcement
-- [ ] Run `go test ./...` for Phase 4
-- [ ] Commit Phase 4 changes
-- [ ] Record Phase 4 diary/changelog updates
+- [x] Add `pkg/harness/context.go` with canonical handler context
+- [x] Add `pkg/harness/dispatch.go` with notification/request dispatch pipeline
+- [x] Add `pkg/harness/compose.go` with deterministic composition order
+- [x] Add exactly-once request response guardrails and diagnostics
+- [x] Add unit tests for ordering and one-response enforcement
+- [x] Run `go test ./...` for Phase 4
+- [x] Commit Phase 4 changes
+- [x] Record Phase 4 diary/changelog updates
 
 ## Phase 5: Built-ins I (Autopilot + Plan Gate)
 

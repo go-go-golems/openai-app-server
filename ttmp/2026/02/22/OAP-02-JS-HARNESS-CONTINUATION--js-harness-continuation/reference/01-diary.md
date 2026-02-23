@@ -373,3 +373,83 @@ As requested, I started writing script assets during continuation work rather th
   - `thread.turn.steer -> turn/steer`
   - `thread.turn.interrupt -> turn/interrupt`
   - `thread.review.start -> review/start`
+
+## Step 5: Implement Phase 4 Harness Core (Context, Compose, Dispatch, Exactly-Once Guardrails)
+
+I added a new `pkg/harness` core package that defines harness handler types, deterministic composition, and a request dispatch path with exactly-once response guardrails plus diagnostics. This is the first concrete framework layer for composing multiple harness policies safely.
+
+I also added unit tests that verify deterministic handler order, wildcard fallback behavior, unanswered-request diagnostics, and duplicate response rejection.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 1)
+
+**Assistant interpretation:** Continue execution through OAP-02 phases with test-backed increments and commits.
+
+**Inferred user intent:** Progress from API wrappers to framework internals while maintaining strict reliability guarantees.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added harness core context and request response guardrails:
+  - `pkg/harness/context.go`
+- Added deterministic composition API:
+  - `pkg/harness/compose.go`
+- Added dispatch pipeline for notifications and requests:
+  - `pkg/harness/dispatch.go`
+- Added unit tests:
+  - `pkg/harness/dispatch_test.go`
+- Ran `go test ./...`.
+
+### Why
+
+- Phase 4 is required before built-ins can be layered predictably and safely.
+
+### What worked
+
+- Request context now tracks response diagnostics (kind/count/responded/handler count).
+- Duplicate response attempts return `ErrRequestAlreadyResponded`.
+- Unanswered requests return `ErrRequestUnanswered` with request metadata.
+- Compose order is deterministic by harness list order and binding order.
+
+### What didn't work
+
+- Initial dispatch behavior short-circuited on first response, which prevented detecting duplicate responders in composition tests.
+- Resolved by continuing handler dispatch and surfacing duplicate-response errors.
+
+### What I learned
+
+- For multi-harness compositions, stopping at first response hides policy conflicts; explicit duplicate detection gives better safety and observability.
+
+### What was tricky to build
+
+- Balancing deterministic order with exactly-once safety semantics.
+- Approach: keep deterministic handler execution and move one-response enforcement into `RequestContext` so any second response is a typed error.
+
+### What warrants a second pair of eyes
+
+- Whether future phases should support configurable "stop-on-first-response" mode in addition to strict conflict detection.
+
+### What should be done in the future
+
+- Commit Phase 4 changes and begin Phase 5 built-in harness implementations.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/harness/context.go` (`RequestContext`, `Diagnostics`, `Respond`)
+  - `openai-app-server/pkg/harness/dispatch.go` (`DispatchRequest`, `DispatchNotification`)
+  - `openai-app-server/pkg/harness/compose.go` (`Compose`)
+  - `openai-app-server/pkg/harness/dispatch_test.go`
+- How to validate:
+  - `go test ./pkg/harness -v`
+  - `go test ./...`
+
+### Technical details
+
+- Guardrail errors:
+  - `ErrRequestAlreadyResponded`
+  - `ErrRequestUnanswered`
+- Request diagnostics captured:
+  - `Responded`, `ResponseKind`, `ResponseCount`, `HandlerInvoked`
