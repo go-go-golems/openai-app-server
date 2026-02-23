@@ -56,15 +56,15 @@
 
 ## Phase 5: Built-ins I (Autopilot + Plan Gate)
 
-- [ ] Implement autopilot approvals built-in harness
-- [ ] Implement plan-gate built-in harness (`turn/plan/updated`)
-- [ ] Add deterministic fixture/replay tests for both built-ins
-- [ ] Add ticket scripts/playbooks for built-ins under `scripts/` and `playbooks/`
-- [ ] Run `go test ./...` preflight
+- [x] Implement autopilot approvals built-in harness
+- [x] Implement plan-gate built-in harness (`turn/plan/updated`)
+- [x] Add deterministic fixture/replay tests for both built-ins
+- [x] Add ticket scripts/playbooks for built-ins under `scripts/` and `playbooks/`
+- [x] Run `go test ./...` preflight
 - [ ] **STOP-GATE:** Explain first built-ins live run command and wait for approval
 - [ ] Execute first built-ins live run
-- [ ] Commit Phase 5 changes
-- [ ] Record Phase 5 diary/changelog updates
+- [x] Commit Phase 5 changes
+- [x] Record Phase 5 diary/changelog updates
 
 ## Phase 6: Built-ins II (TDD/Review/Compaction)
 

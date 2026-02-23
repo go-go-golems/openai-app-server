@@ -69,3 +69,17 @@ Step 5: Implemented Phase 4 harness core package (context/compose/dispatch) with
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/harness/dispatch_test.go — Ordering
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 4 task progress updated
 
+
+## 2026-02-22
+
+Step 6: Implemented Phase 5 built-ins (autopilot + plan gate), added deterministic built-in tests, and prepared Phase 5 live smoke scripts/playbooks.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/harness/builtin/autopilot.go — Autopilot approval policy harness
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/harness/builtin/builtin_test.go — Deterministic unit coverage for built-ins
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/harness/builtin/plan_gate.go — Plan-gate harness with steer/interrupt controller
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/02-builtin-autopilot-smoke.js — Autopilot smoke script
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/03-builtin-plan-gate-smoke.js — Plan-gate smoke script
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 5 pre-run tasks completed
+

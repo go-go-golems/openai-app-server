@@ -453,3 +453,86 @@ I also added unit tests that verify deterministic handler order, wildcard fallba
   - `ErrRequestUnanswered`
 - Request diagnostics captured:
   - `Responded`, `ResponseKind`, `ResponseCount`, `HandlerInvoked`
+
+## Step 6: Implement Phase 5 Built-ins I (Autopilot + Plan Gate) and Prepare Live-Run Assets
+
+I implemented two built-ins under `pkg/harness/builtin`: an autopilot approval policy harness and a plan-gate harness that reacts to `turn/plan/updated` and triggers steer/interrupt actions via a controller interface. This establishes concrete policy modules on top of the Phase 4 dispatch framework.
+
+I also added deterministic tests for both built-ins and created OAP-02 scripts/playbooks for live smoke scenarios. Preflight tests pass, and the next step is the mandatory stop-gate before the first Phase 5 real run.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, go ahead"
+
+**Assistant interpretation:** Continue implementation through the next planned phases.
+
+**Inferred user intent:** Keep moving forward without pausing, while preserving scripted stop-gates before live runs.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added built-ins:
+  - `pkg/harness/builtin/autopilot.go`
+  - `pkg/harness/builtin/plan_gate.go`
+- Added built-in tests:
+  - `pkg/harness/builtin/builtin_test.go`
+- Added Phase 5 script assets in ticket:
+  - `scripts/02-builtin-autopilot-smoke.js`
+  - `scripts/03-builtin-plan-gate-smoke.js`
+- Added Phase 5 playbooks in ticket:
+  - `playbooks/02-builtin-autopilot-smoke-plan.md`
+  - `playbooks/03-builtin-plan-gate-smoke-plan.md`
+- Ran preflight validation:
+  - `go test ./...` (pass)
+
+### Why
+
+- Phase 5 requires concrete built-ins to prove the framework is usable for real policy workflows.
+
+### What worked
+
+- Autopilot built-in returns deterministic decisions for command/file approval request types.
+- Plan gate built-in enforces per-turn single gating and supports steer vs interrupt via injected approver/controller.
+- Built-in tests pass and exercise deterministic behavior.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Keeping plan-gate side effects behind a small controller interface makes unit tests straightforward and keeps dispatch logic pure.
+
+### What was tricky to build
+
+- Balancing realistic policy behavior with deterministic tests and no live dependencies.
+- Approach: encode explicit decision functions and controller interfaces so tests assert behavior directly.
+
+### What warrants a second pair of eyes
+
+- Autopilot heuristics are intentionally simple in this pass; thresholds/prefix lists may need tightening after first real runs.
+
+### What should be done in the future
+
+- Stop at Phase 5 live-run gate and request approval before executing either built-in smoke script.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/harness/builtin/autopilot.go`
+  - `openai-app-server/pkg/harness/builtin/plan_gate.go`
+  - `openai-app-server/pkg/harness/builtin/builtin_test.go`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/02-builtin-autopilot-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/02-builtin-autopilot-smoke-plan.md`
+- How to validate:
+  - `go test ./pkg/harness/builtin -v`
+  - `go test ./...`
+
+### Technical details
+
+- Autopilot response payload shape used:
+  - `{ "decision": "acceptForSession" }`
+  - `{ "decision": "decline" }`
+- Plan gate notification trigger handled:
+  - `turn/plan/updated`
