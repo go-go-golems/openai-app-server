@@ -1433,3 +1433,93 @@ This closes the reliability gap for async script completion and makes live test 
   - `ui.emit ... "type":"module-api-turn-gate-complete","ok":true,"turnCompleted":true ...`
   - `wait-for-ui-type matched type=module-api-turn-gate-complete`
   - `harness.run completed`
+
+
+## Step 17: Added Inbound Request Response Plumbing (`rpc.respond`)
+
+I implemented explicit response APIs for inbound server requests across codexrpc and JS runtime surfaces. This closes a major capability gap: previously scripts could observe requests but had no first-class way to send JSON-RPC responses.
+
+I validated this end-to-end in tests using in-memory transport by simulating an inbound request and asserting that the harness script responded with a proper response envelope.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 14)
+
+**Assistant interpretation:** Continue progressing the harness toward complete request lifecycle support after deterministic completion improvements.
+
+**Inferred user intent:** Move from passive event observation to actionable request handling capabilities needed for approval-style workflows.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added protocol helpers:
+  - `pkg/codexrpc/protocol.go`
+    - `NewResponse(...)`
+    - `NewErrorResponse(...)`
+- Added client send APIs:
+  - `pkg/codexrpc/client.go`
+    - `Respond(...)`
+    - `RespondError(...)`
+- Extended JS bridge interface and runtime handlers:
+  - `pkg/js/runtime.go`
+    - `RPCBridge` now includes response methods
+    - `rpcRespond(...)` and `rpcRespondError(...)` runtime functions
+- Extended JS module surfaces:
+  - `pkg/js/module_rpc.go`
+    - exports `respond`, `respondError`
+  - `pkg/js/module_codex.go`
+    - session exposes `respond`, `respondError`
+- Added/updated tests:
+  - `pkg/codexrpc/client_test.go` response send behavior
+  - `pkg/js/runtime_test.go` API surface checks
+  - `cmd/openai-app-server/harness_run_command_test.go`
+    - request->response integration path using simulated inbound request
+- Ran validation:
+  - `go test ./...` (pass)
+
+### Why
+
+- Request handling without response support is incomplete for approval and tool-invocation workflows.
+
+### What worked
+
+- Inbound request simulation triggered JS `onRequest` callback.
+- Script sent `rpc.respond(evt.id, ...)` and transport observed correct response envelope.
+- No regressions in existing harness and runtime tests.
+
+### What didn't work
+
+- N/A
+
+### What I learned
+
+- Current architecture can support request/response flows cleanly with minimal API extension, because wildcard request forwarding was already in place.
+
+### What was tricky to build
+
+- Keeping response APIs coherent at both `require("rpc")` and `codex.connect()` session layers.
+- Approach: implement shared runtime-level response helpers and expose them through both module surfaces.
+
+### What warrants a second pair of eyes
+
+- Confirm error-code conventions for `respondError` (currently caller-provided integer) against expected codex/app-server semantics.
+
+### What should be done in the future
+
+- Prepare a live scenario that actually receives real inbound request(s) and validates response effects against server behavior.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/codexrpc/client.go` (`Respond`, `RespondError`)
+  - `openai-app-server/pkg/codexrpc/protocol.go` (`NewResponse`, `NewErrorResponse`)
+  - `openai-app-server/pkg/js/module_rpc.go` (`respond`, `respondError`)
+  - `openai-app-server/cmd/openai-app-server/harness_run_command_test.go` (`TestHarnessRunHandlesServerRequestAndResponds`)
+- How to validate:
+  - `go test ./...`
+
+### Technical details
+
+- Response-path integration now supports:
+  - `const rpc = require("rpc"); rpc.respond(id, result); rpc.respondError(id, code, message, data);`

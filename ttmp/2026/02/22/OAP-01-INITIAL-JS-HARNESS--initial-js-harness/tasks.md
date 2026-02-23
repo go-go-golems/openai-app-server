@@ -90,3 +90,13 @@
 - [x] Run `go test ./...` preflight before live run
 - [x] **STOP-GATE:** Explain deterministic turn-completion script + exact command and wait for approval
 - [x] Execute deterministic turn-completion live run (after approval)
+
+## Phase 10: Request/Response Plumbing for Inbound RPC Requests
+
+- [x] Add JSON-RPC response envelope helpers (`NewResponse`, `NewErrorResponse`)
+- [x] Add `codexrpc.Client` response send APIs (`Respond`, `RespondError`)
+- [x] Extend JS `rpc` module with `respond` and `respondError`
+- [x] Extend `codex.connect()` session with `respond` and `respondError`
+- [x] Add tests for response sending and request->response harness flow
+- [x] Run `go test ./...` after response-path implementation
+- [ ] Prepare and gate next live scenario for real inbound request handling

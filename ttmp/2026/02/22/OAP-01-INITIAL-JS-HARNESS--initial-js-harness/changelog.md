@@ -196,3 +196,20 @@ Step 16: Added `harness run` UI-event wait gating (`--wait-for-ui-type` family),
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/04-module-api-turn-completed-gate-plan.md — Updated command and output checks using wait gate
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 9 completed
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed reliability fix and live validation notes
+
+
+## 2026-02-22
+
+Step 17: Added inbound request response plumbing (`rpc.respond` / `rpc.respondError`) across codexrpc + JS runtime, with end-to-end request->response integration tests.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/protocol.go — Added JSON-RPC response envelope constructors
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/client.go — Added response send APIs for inbound request handling
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/client_test.go — Added response-path client tests
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime.go — Added runtime response bridge methods
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_rpc.go — Exposed `respond` and `respondError` in module API
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_codex.go — Exposed response methods on session surface
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_run_command_test.go — Added request->response harness integration test
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Added and checked Phase 10 implementation tasks
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed implementation and validation notes
