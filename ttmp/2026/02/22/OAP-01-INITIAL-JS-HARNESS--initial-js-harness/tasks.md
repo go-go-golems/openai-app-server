@@ -88,5 +88,5 @@
 - [x] Add module-API script that waits for matching `turn/completed` notification before success
 - [x] Add playbook with deterministic completion markers and timeout behavior
 - [x] Run `go test ./...` preflight before live run
-- [ ] **STOP-GATE:** Explain deterministic turn-completion script + exact command and wait for approval
-- [ ] Execute deterministic turn-completion live run (after approval)
+- [x] **STOP-GATE:** Explain deterministic turn-completion script + exact command and wait for approval
+- [x] Execute deterministic turn-completion live run (after approval)

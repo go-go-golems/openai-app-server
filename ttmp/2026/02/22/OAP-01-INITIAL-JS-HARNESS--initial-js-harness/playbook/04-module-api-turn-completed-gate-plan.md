@@ -46,7 +46,10 @@ go run ./cmd/openai-app-server harness run \
   --stdio-command codex \
   --stdio-args "app-server --listen stdio://" \
   --timeout-ms 90000 \
-  --settle-ms 6000
+  --settle-ms 1000 \
+  --wait-for-ui-type module-api-turn-gate-complete \
+  --wait-for-ui-timeout-ms 30000 \
+  --fail-on-wait-ui-ok-false
 ```
 
 ## Expected Output Checks
@@ -55,6 +58,7 @@ go run ./cmd/openai-app-server harness run \
 - `ui.emit` includes `type:"module-api-turn-gate-turn-start"` with `ok:true`.
 - at least one `ui.emit` contains `method:"turn/completed"` in `type:"module-api-turn-gate-notification"`.
 - final `ui.emit` includes `type:"module-api-turn-gate-complete"` with `ok:true` and `turnCompleted:true`.
+- output includes `wait-for-ui-type matched type=module-api-turn-gate-complete`.
 - final process line is `harness.run completed`.
 
 ## Failure Signals

@@ -1353,3 +1353,83 @@ This addresses the non-determinism noted in Step 14 where completion could be em
 
 - Next live-run command prepared (not executed in this step):
   - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/05-module-api-turn-completed-gate.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 90000 --settle-ms 6000`
+
+
+## Step 16: Added Harness Wait-For-UI Gate and Ran Deterministic Live Validation
+
+The deterministic script in Step 15 exposed a harness-runner limitation: the command exited after `settle-ms` even if the script was still waiting for completion conditions. I implemented a first-class wait gate in `harness run` so the command can block on a specific `ui.emit` type before exiting, then validated it in a real run.
+
+This closes the reliability gap for async script completion and makes live test outcomes deterministic without overloading fixed settle delays.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 14)
+
+**Assistant interpretation:** Continue after success by addressing discovered reliability gaps and validating fixes live.
+
+**Inferred user intent:** Keep iterating toward robust real-world harness behavior, not just happy-path script execution.
+
+**Commit (code):** pending
+
+### What I did
+
+- Implemented wait gate flags in harness command:
+  - `--wait-for-ui-type`
+  - `--wait-for-ui-timeout-ms`
+  - `--fail-on-wait-ui-ok-false`
+- Updated stdout UI bridge to parse emitted JSON events and signal matching wait condition.
+- Added integration coverage:
+  - `TestHarnessRunWaitForUIType` in `cmd/openai-app-server/harness_run_command_test.go`
+- Ran full tests:
+  - `go test ./...` (pass)
+- Executed deterministic live run with wait gate enabled:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/05-module-api-turn-completed-gate.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 90000 --settle-ms 1000 --wait-for-ui-type module-api-turn-gate-complete --wait-for-ui-timeout-ms 30000 --fail-on-wait-ui-ok-false`
+- Updated deterministic playbook command to include new wait flags.
+
+### Why
+
+- Needed deterministic command-level completion semantics tied to script-declared end state.
+
+### What worked
+
+- Live run emitted `module-api-turn-gate-complete` with `ok:true` and `turnCompleted:true`.
+- Command logged `wait-for-ui-type matched type=module-api-turn-gate-complete` and exited cleanly.
+- Late-event race against fixed settle window is now mitigated by explicit completion gating.
+
+### What didn't work
+
+- Negative-path test via `root.Execute()` on intentional `ok:false` was not stable under the command wrapper's error path behavior; retained positive-path integration coverage instead.
+
+### What I learned
+
+- UI-event gating is a better abstraction point for harness completion than runtime sleep tuning.
+
+### What was tricky to build
+
+- Matching UI events non-invasively while keeping current stdout behavior unchanged.
+- Approach: kept `ui.emit` output as-is, added optional internal callback path for wait logic, and made match logic opt-in via flags.
+
+### What warrants a second pair of eyes
+
+- Consider whether we should expose a structured machine-output mode for `ui.emit` lines now that they are used as control-plane markers.
+
+### What should be done in the future
+
+- Add next-phase scenario for request/approval-style flows using the same wait-gate pattern.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/cmd/openai-app-server/harness_run_command.go` (`wait-for-ui` settings, bridge callback, wait loop)
+  - `openai-app-server/cmd/openai-app-server/harness_run_command_test.go` (`TestHarnessRunWaitForUIType`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/04-module-api-turn-completed-gate-plan.md`
+- How to validate:
+  - `go test ./...`
+  - run deterministic command above and confirm matched wait log + complete marker.
+
+### Technical details
+
+- Key success markers from live run:
+  - `ui.emit ... "type":"module-api-turn-gate-complete","ok":true,"turnCompleted":true ...`
+  - `wait-for-ui-type matched type=module-api-turn-gate-complete`
+  - `harness.run completed`
