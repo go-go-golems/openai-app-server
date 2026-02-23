@@ -1,6 +1,8 @@
 package js
 
 import (
+	"context"
+
 	"github.com/dop251/goja"
 	"github.com/dop251/goja_nodejs/require"
 )
@@ -43,6 +45,9 @@ func buildCodexSession(vm *goja.Runtime, rt *Runtime) *goja.Object {
 	_ = session.Set("onUIEvent", func(call goja.FunctionCall) goja.Value {
 		return rt.registerHandler(vm, call, "uiEvent")
 	})
+	_ = session.Set("waitFor", func(call goja.FunctionCall) goja.Value {
+		return rt.waitFor(vm, call)
+	})
 
 	threadByID := func(call goja.FunctionCall) goja.Value {
 		threadID := extractThreadIDFromCall(vm, call, 0)
@@ -62,6 +67,60 @@ func buildCodexSession(vm *goja.Runtime, rt *Runtime) *goja.Object {
 	})
 	_ = threads.Set("byId", threadByID)
 	_ = session.Set("threads", threads)
+
+	ids := vm.NewObject()
+	_ = ids.Set("thread", func(call goja.FunctionCall) goja.Value {
+		threadID := extractThreadIDFromCall(vm, call, 0)
+		return vm.ToValue(threadID)
+	})
+	_ = ids.Set("turn", func(call goja.FunctionCall) goja.Value {
+		turnID := extractTurnIDFromCall(vm, call, 0)
+		return vm.ToValue(turnID)
+	})
+	_ = session.Set("ids", ids)
+
+	events := vm.NewObject()
+	_ = events.Set("metrics", func(goja.FunctionCall) goja.Value {
+		return buildEventMetrics(vm, rt)
+	})
+	_ = session.Set("events", events)
+
+	approvals := vm.NewObject()
+	_ = approvals.Set("setPolicy", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 1 || goja.IsUndefined(call.Arguments[0]) || goja.IsNull(call.Arguments[0]) {
+			rt.clearApprovalPolicy(0)
+			return goja.Undefined()
+		}
+		policyObj := call.Arguments[0].ToObject(vm)
+		policy := &approvalPolicyHandlers{}
+		policy.command = requiredOptionalCallable(vm, policyObj, "command")
+		policy.fileChange = requiredOptionalCallable(vm, policyObj, "fileChange")
+		policy.fallback = requiredOptionalCallable(vm, policyObj, "fallback")
+
+		epoch := rt.setApprovalPolicy(policy)
+		return vm.ToValue(func(goja.FunctionCall) goja.Value {
+			rt.clearApprovalPolicy(epoch)
+			return goja.Undefined()
+		})
+	})
+	_ = approvals.Set("respond", func(call goja.FunctionCall) goja.Value {
+		if rt.rpc == nil {
+			return goja.Undefined()
+		}
+		if len(call.Arguments) < 2 {
+			panic(vm.NewTypeError("approvals.respond requires request/id and decision"))
+		}
+		id := approvalRequestID(vm, call.Arguments[0])
+		decision, err := normalizeApprovalDecision(call.Arguments[1].Export())
+		if err != nil {
+			panic(vm.NewTypeError(err.Error()))
+		}
+		if err := rt.rpc.Respond(context.Background(), id, decision); err != nil {
+			panic(vm.NewGoError(err))
+		}
+		return goja.Undefined()
+	})
+	_ = session.Set("approvals", approvals)
 
 	return session
 }
@@ -83,6 +142,9 @@ func buildThreadHandle(vm *goja.Runtime, rt *Runtime, threadID string) *goja.Obj
 	})
 	_ = turn.Set("interrupt", func(call goja.FunctionCall) goja.Value {
 		return requestWithThreadID(rt, vm, "turn/interrupt", threadID, call)
+	})
+	_ = turn.Set("waitCompleted", func(call goja.FunctionCall) goja.Value {
+		return rt.waitForTurnCompleted(vm, threadID, call)
 	})
 	_ = thread.Set("turn", turn)
 
@@ -158,6 +220,14 @@ func extractThreadIDFromCall(vm *goja.Runtime, call goja.FunctionCall, idx int) 
 	panic(vm.NewTypeError("thread id is required"))
 }
 
+func extractTurnIDFromCall(vm *goja.Runtime, call goja.FunctionCall, idx int) string {
+	turnID := extractTurnID(exportArg(call, idx))
+	if turnID != "" {
+		return turnID
+	}
+	panic(vm.NewTypeError("turn id is required"))
+}
+
 func extractThreadID(v any) string {
 	switch t := v.(type) {
 	case string:
@@ -179,4 +249,62 @@ func extractThreadID(v any) string {
 		}
 	}
 	return ""
+}
+
+func extractTurnID(v any) string {
+	switch t := v.(type) {
+	case string:
+		return t
+	case map[string]any:
+		if id, ok := t["turnId"].(string); ok && id != "" {
+			return id
+		}
+		if id, ok := t["id"].(string); ok && id != "" {
+			return id
+		}
+		if nested, ok := t["turn"].(map[string]any); ok {
+			if id := extractTurnID(nested); id != "" {
+				return id
+			}
+		}
+		if nested, ok := t["params"].(map[string]any); ok {
+			if id := extractTurnID(nested); id != "" {
+				return id
+			}
+		}
+	}
+	return ""
+}
+
+func buildEventMetrics(vm *goja.Runtime, rt *Runtime) *goja.Object {
+	metrics := vm.NewObject()
+	_ = metrics.Set("countByMethod", func(goja.FunctionCall) goja.Value {
+		counts, _, _ := rt.snapshotEventMetrics()
+		return vm.ToValue(counts)
+	})
+	_ = metrics.Set("totalNotifications", func(goja.FunctionCall) goja.Value {
+		_, totalNotifications, _ := rt.snapshotEventMetrics()
+		return vm.ToValue(totalNotifications)
+	})
+	_ = metrics.Set("totalRequests", func(goja.FunctionCall) goja.Value {
+		_, _, totalRequests := rt.snapshotEventMetrics()
+		return vm.ToValue(totalRequests)
+	})
+	_ = metrics.Set("reset", func(goja.FunctionCall) goja.Value {
+		rt.resetEventMetrics()
+		return goja.Undefined()
+	})
+	return metrics
+}
+
+func requiredOptionalCallable(vm *goja.Runtime, obj *goja.Object, key string) goja.Callable {
+	value := obj.Get(key)
+	if value == nil || goja.IsUndefined(value) || goja.IsNull(value) {
+		return nil
+	}
+	cb, ok := goja.AssertFunction(value)
+	if !ok {
+		panic(vm.NewTypeError(key + " policy must be a function"))
+	}
+	return cb
 }

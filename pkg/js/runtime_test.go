@@ -123,12 +123,28 @@ func TestRuntimeInstallsHostAndCodexModule(t *testing.T) {
       if (typeof session.respond !== "function") throw new Error("missing session.respond");
       if (typeof session.respondError !== "function") throw new Error("missing session.respondError");
       if (typeof session.onNotification !== "function") throw new Error("missing session.onNotification");
+      if (typeof session.waitFor !== "function") throw new Error("missing session.waitFor");
       if (typeof session.threads !== "object") throw new Error("missing session.threads");
       if (typeof session.threads.start !== "function") throw new Error("missing session.threads.start");
       if (typeof session.threads.list !== "function") throw new Error("missing session.threads.list");
       if (typeof session.threads.read !== "function") throw new Error("missing session.threads.read");
       if (typeof session.threads.byId !== "function") throw new Error("missing session.threads.byId");
       if (typeof session.thread !== "function") throw new Error("missing session.thread");
+      if (typeof session.ids !== "object") throw new Error("missing session.ids");
+      if (typeof session.ids.thread !== "function") throw new Error("missing session.ids.thread");
+      if (typeof session.ids.turn !== "function") throw new Error("missing session.ids.turn");
+      if (typeof session.events !== "object") throw new Error("missing session.events");
+      if (typeof session.events.metrics !== "function") throw new Error("missing session.events.metrics");
+      if (typeof session.approvals !== "object") throw new Error("missing session.approvals");
+      if (typeof session.approvals.setPolicy !== "function") throw new Error("missing session.approvals.setPolicy");
+      if (typeof session.approvals.respond !== "function") throw new Error("missing session.approvals.respond");
+      const metrics = session.events.metrics();
+      if (typeof metrics.countByMethod !== "function") throw new Error("missing metrics.countByMethod");
+      if (typeof metrics.totalNotifications !== "function") throw new Error("missing metrics.totalNotifications");
+      if (typeof metrics.totalRequests !== "function") throw new Error("missing metrics.totalRequests");
+      if (typeof metrics.reset !== "function") throw new Error("missing metrics.reset");
+      const thread = session.thread("thread-check");
+      if (typeof thread.turn.waitCompleted !== "function") throw new Error("missing thread.turn.waitCompleted");
       if (codex.version !== "0.1.0") throw new Error("unexpected codex version");
     `)
 	if err != nil {
@@ -349,4 +365,385 @@ func TestRuntimeNotificationCallbackDispatch(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+func TestCodexIdentityHelpersExtractIDs(t *testing.T) {
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-ids",
+		RPC:  fakeRPCBridge{},
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      const session = codex.connect();
+      globalThis.__ids = {
+        threadDirect: session.ids.thread("thread-a"),
+        threadNested: session.ids.thread({ thread: { id: "thread-b" } }),
+        turnDirect: session.ids.turn("turn-a"),
+        turnNested: session.ids.turn({ turn: { turnId: "turn-b" } })
+      };
+    `)
+	if err != nil {
+		t.Fatalf("RunString() error = %v", err)
+	}
+
+	threadDirect, err := rt.RunString(`globalThis.__ids.threadDirect`)
+	if err != nil {
+		t.Fatalf("RunString() threadDirect error = %v", err)
+	}
+	if threadDirect.String() != "thread-a" {
+		t.Fatalf("threadDirect mismatch: got=%q want=%q", threadDirect.String(), "thread-a")
+	}
+
+	threadNested, err := rt.RunString(`globalThis.__ids.threadNested`)
+	if err != nil {
+		t.Fatalf("RunString() threadNested error = %v", err)
+	}
+	if threadNested.String() != "thread-b" {
+		t.Fatalf("threadNested mismatch: got=%q want=%q", threadNested.String(), "thread-b")
+	}
+
+	turnDirect, err := rt.RunString(`globalThis.__ids.turnDirect`)
+	if err != nil {
+		t.Fatalf("RunString() turnDirect error = %v", err)
+	}
+	if turnDirect.String() != "turn-a" {
+		t.Fatalf("turnDirect mismatch: got=%q want=%q", turnDirect.String(), "turn-a")
+	}
+
+	turnNested, err := rt.RunString(`globalThis.__ids.turnNested`)
+	if err != nil {
+		t.Fatalf("RunString() turnNested error = %v", err)
+	}
+	if turnNested.String() != "turn-b" {
+		t.Fatalf("turnNested mismatch: got=%q want=%q", turnNested.String(), "turn-b")
+	}
+}
+
+func TestCodexWaitForMatchesNotification(t *testing.T) {
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-waitfor",
+		RPC:  fakeRPCBridge{},
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      const session = codex.connect();
+      globalThis.__wait = { done: false, method: "", error: "" };
+      session.waitFor({ method: "turn/completed", timeoutMs: 2000 }).then(
+        (evt) => {
+          globalThis.__wait.done = true;
+          globalThis.__wait.method = evt.method || "";
+        },
+        (err) => {
+          globalThis.__wait.done = true;
+          globalThis.__wait.error = String(err);
+        }
+      );
+    `)
+	if err != nil {
+		t.Fatalf("RunString() setup error = %v", err)
+	}
+
+	if emitErr := rt.EmitRPCNotification("turn/completed", map[string]any{
+		"threadId": "thread-1",
+		"turnId":   "turn-1",
+	}); emitErr != nil {
+		t.Fatalf("EmitRPCNotification() error = %v", emitErr)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		doneValue, runErr := rt.RunString(`globalThis.__wait.done`)
+		if runErr != nil {
+			t.Fatalf("RunString() done check error = %v", runErr)
+		}
+		if doneValue.ToBoolean() {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("waitFor did not resolve before deadline")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	methodValue, err := rt.RunString(`globalThis.__wait.method`)
+	if err != nil {
+		t.Fatalf("RunString() method error = %v", err)
+	}
+	if methodValue.String() != "turn/completed" {
+		t.Fatalf("waitFor method mismatch: got=%q want=%q", methodValue.String(), "turn/completed")
+	}
+
+	errorValue, err := rt.RunString(`globalThis.__wait.error`)
+	if err != nil {
+		t.Fatalf("RunString() error field read failed: %v", err)
+	}
+	if errorValue.String() != "" {
+		t.Fatalf("waitFor should not fail, got error=%q", errorValue.String())
+	}
+}
+
+func TestCodexTurnWaitCompletedFiltersByTurnID(t *testing.T) {
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-waitcompleted",
+		RPC:  fakeRPCBridge{},
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      const session = codex.connect();
+      const thread = session.thread("thread-abc");
+      globalThis.__waitTurn = { done: false, matchedTurnId: "", error: "" };
+      thread.turn.waitCompleted({ turnId: "turn-2", timeoutMs: 2000 }).then(
+        (evt) => {
+          globalThis.__waitTurn.done = true;
+          const params = evt.params || {};
+          globalThis.__waitTurn.matchedTurnId = params.turnId || "";
+        },
+        (err) => {
+          globalThis.__waitTurn.done = true;
+          globalThis.__waitTurn.error = String(err);
+        }
+      );
+    `)
+	if err != nil {
+		t.Fatalf("RunString() setup error = %v", err)
+	}
+
+	if emitErr := rt.EmitRPCNotification("turn/completed", map[string]any{
+		"threadId": "thread-abc",
+		"turnId":   "turn-1",
+	}); emitErr != nil {
+		t.Fatalf("EmitRPCNotification() first event error = %v", emitErr)
+	}
+	if emitErr := rt.EmitRPCNotification("turn/completed", map[string]any{
+		"threadId": "thread-abc",
+		"turnId":   "turn-2",
+	}); emitErr != nil {
+		t.Fatalf("EmitRPCNotification() second event error = %v", emitErr)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		doneValue, runErr := rt.RunString(`globalThis.__waitTurn.done`)
+		if runErr != nil {
+			t.Fatalf("RunString() done check error = %v", runErr)
+		}
+		if doneValue.ToBoolean() {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("waitCompleted did not resolve before deadline")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	matchedTurnID, err := rt.RunString(`globalThis.__waitTurn.matchedTurnId`)
+	if err != nil {
+		t.Fatalf("RunString() matchedTurnId error = %v", err)
+	}
+	if matchedTurnID.String() != "turn-2" {
+		t.Fatalf("waitCompleted matchedTurnId mismatch: got=%q want=%q", matchedTurnID.String(), "turn-2")
+	}
+
+	errorValue, err := rt.RunString(`globalThis.__waitTurn.error`)
+	if err != nil {
+		t.Fatalf("RunString() error field read failed: %v", err)
+	}
+	if errorValue.String() != "" {
+		t.Fatalf("waitCompleted should not fail, got error=%q", errorValue.String())
+	}
+}
+
+func TestCodexEventMetricsCountsAndReset(t *testing.T) {
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-metrics",
+		RPC:  fakeRPCBridge{},
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      globalThis.__session = codex.connect();
+    `)
+	if err != nil {
+		t.Fatalf("RunString() setup error = %v", err)
+	}
+
+	if emitErr := rt.EmitRPCNotification("thread/started", map[string]any{"id": "thread-1"}); emitErr != nil {
+		t.Fatalf("EmitRPCNotification() first error = %v", emitErr)
+	}
+	if emitErr := rt.EmitRPCNotification("turn/completed", map[string]any{"threadId": "thread-1", "turnId": "turn-1"}); emitErr != nil {
+		t.Fatalf("EmitRPCNotification() second error = %v", emitErr)
+	}
+	if emitErr := rt.EmitRPCRequest("req-1", "item/commandExecution/requestApproval", map[string]any{"command": "curl -I https://example.com"}); emitErr != nil {
+		t.Fatalf("EmitRPCRequest() error = %v", emitErr)
+	}
+
+	_, err = rt.RunString(`
+      const metrics = globalThis.__session.events.metrics();
+      globalThis.__metrics = {
+        counts: metrics.countByMethod(),
+        notifications: metrics.totalNotifications(),
+        requests: metrics.totalRequests()
+      };
+    `)
+	if err != nil {
+		t.Fatalf("RunString() metrics snapshot error = %v", err)
+	}
+
+	notifications, err := rt.RunString(`globalThis.__metrics.notifications`)
+	if err != nil {
+		t.Fatalf("RunString() notifications error = %v", err)
+	}
+	if notifications.ToInteger() != 2 {
+		t.Fatalf("notifications mismatch: got=%d want=%d", notifications.ToInteger(), 2)
+	}
+
+	requests, err := rt.RunString(`globalThis.__metrics.requests`)
+	if err != nil {
+		t.Fatalf("RunString() requests error = %v", err)
+	}
+	if requests.ToInteger() != 1 {
+		t.Fatalf("requests mismatch: got=%d want=%d", requests.ToInteger(), 1)
+	}
+
+	countCommandApproval, err := rt.RunString(`globalThis.__metrics.counts["item/commandExecution/requestApproval"]`)
+	if err != nil {
+		t.Fatalf("RunString() countByMethod command error = %v", err)
+	}
+	if countCommandApproval.ToInteger() != 1 {
+		t.Fatalf("countByMethod command mismatch: got=%d want=%d", countCommandApproval.ToInteger(), 1)
+	}
+
+	_, err = rt.RunString(`
+      const metrics2 = globalThis.__session.events.metrics();
+      metrics2.reset();
+      globalThis.__afterReset = {
+        notifications: metrics2.totalNotifications(),
+        requests: metrics2.totalRequests(),
+        methodCountKeys: Object.keys(metrics2.countByMethod()).length
+      };
+    `)
+	if err != nil {
+		t.Fatalf("RunString() reset error = %v", err)
+	}
+
+	afterResetNotifications, err := rt.RunString(`globalThis.__afterReset.notifications`)
+	if err != nil {
+		t.Fatalf("RunString() after reset notifications error = %v", err)
+	}
+	if afterResetNotifications.ToInteger() != 0 {
+		t.Fatalf("after reset notifications mismatch: got=%d want=0", afterResetNotifications.ToInteger())
+	}
+
+	afterResetRequests, err := rt.RunString(`globalThis.__afterReset.requests`)
+	if err != nil {
+		t.Fatalf("RunString() after reset requests error = %v", err)
+	}
+	if afterResetRequests.ToInteger() != 0 {
+		t.Fatalf("after reset requests mismatch: got=%d want=0", afterResetRequests.ToInteger())
+	}
+
+	afterResetMethodKeys, err := rt.RunString(`globalThis.__afterReset.methodCountKeys`)
+	if err != nil {
+		t.Fatalf("RunString() after reset methodCountKeys error = %v", err)
+	}
+	if afterResetMethodKeys.ToInteger() != 0 {
+		t.Fatalf("after reset methodCountKeys mismatch: got=%d want=0", afterResetMethodKeys.ToInteger())
+	}
+}
+
+func TestCodexApprovalsSetPolicyAndRespond(t *testing.T) {
+	rpcBridge := &recordingRPCBridge{}
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-approvals-policy",
+		RPC:  rpcBridge,
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      const session = codex.connect();
+      session.approvals.setPolicy({
+        command: (req) => req.commandText && req.commandText.startsWith("curl ") ? "acceptForSession" : "decline",
+        fileChange: (_req) => "decline",
+        fallback: (_req) => "cancel"
+      });
+      session.approvals.respond("manual-accept", "accept");
+    `)
+	if err != nil {
+		t.Fatalf("RunString() setup error = %v", err)
+	}
+
+	if emitErr := rt.EmitRPCRequest("req-command", "item/commandExecution/requestApproval", map[string]any{"command": "curl -I https://example.com"}); emitErr != nil {
+		t.Fatalf("EmitRPCRequest() command error = %v", emitErr)
+	}
+	if emitErr := rt.EmitRPCRequest("req-file", "item/fileChange/requestApproval", map[string]any{"path": "README.md"}); emitErr != nil {
+		t.Fatalf("EmitRPCRequest() file error = %v", emitErr)
+	}
+	if emitErr := rt.EmitRPCRequest("req-fallback", "item/other/requestApproval", map[string]any{}); emitErr != nil {
+		t.Fatalf("EmitRPCRequest() fallback error = %v", emitErr)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	var responses []capturedResponse
+	for {
+		responses = rpcBridge.snapshot()
+		if len(responses) >= 4 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for approval policy responses, got=%d", len(responses))
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	decisionByID := map[string]any{}
+	for _, response := range responses {
+		id, _ := response.id.(string)
+		if id == "" {
+			continue
+		}
+		decisionByID[id] = response.result
+	}
+
+	expectDecision := func(id string, want any) {
+		got, ok := decisionByID[id]
+		if !ok {
+			t.Fatalf("missing response for id=%s (all=%#v)", id, decisionByID)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("response mismatch for id=%s: got=%#v want=%#v", id, got, want)
+		}
+	}
+
+	expectDecision("manual-accept", map[string]any{"decision": "accept"})
+	expectDecision("req-command", map[string]any{"decision": "acceptForSession"})
+	expectDecision("req-file", map[string]any{"decision": "decline"})
+	expectDecision("req-fallback", map[string]any{"decision": "cancel"})
 }
