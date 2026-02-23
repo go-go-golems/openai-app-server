@@ -18,7 +18,7 @@ RelatedFiles:
       Note: JS runtime host and callback paths used by harness scripts
 ExternalSources: []
 Summary: "Pre-flight plan for first live harness run; explicitly prepared but not executed yet."
-LastUpdated: 2026-02-23T03:20:00-05:00
+LastUpdated: 2026-02-23T03:35:00-05:00
 WhatFor: "Provide deterministic steps for the first real harness execution after explicit user confirmation."
 WhenToUse: "Use this exactly when proceeding past the stop-gate for the first live harness test."
 ---
@@ -46,26 +46,21 @@ go test ./...
 go run ./cmd/openai-app-server --help
 ```
 
-2. Create a minimal harness script fixture (example path):
+2. Use the ticket-managed harness script fixture:
 
 ```bash
-cat > /tmp/oap-first-harness.js <<'JS'
-const codex = require("codex");
-const session = codex.connect();
-session.onNotification((evt) => {
-  console.log("notification", JSON.stringify(evt));
-});
-JS
+SCRIPT=ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js
+test -f "$SCRIPT"
 ```
 
 3. Launch first real harness run (STOP-GATE approval required before this command):
 
 ```bash
 go run ./cmd/openai-app-server harness run \
-  --script /tmp/oap-first-harness.js \
+  --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js \
   --transport stdio \
-  --stdio-command codex-app-server \
-  --stdio-args "stdio-jsonl"
+  --stdio-command codex \
+  --stdio-args "app-server --listen stdio://"
 ```
 
 4. Capture and inspect output for handshake + event markers.
@@ -89,4 +84,3 @@ go run ./cmd/openai-app-server harness run \
 - Record exact command, outputs, and errors into `reference/01-diary.md` (new step).
 - Update `tasks.md` to mark real-harness execution task status.
 - Add changelog entry with run outcome and next fixes.
-

@@ -766,9 +766,9 @@ This validates the end-to-end path across the newly implemented layers: harness 
 - Ran full test suite:
   - `go test ./...` (pass)
 - Ran first real harness test script:
-  - Script file: `/tmp/oap-first-harness.js`
+  - Script file: `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js`
   - Command:
-    - `go run ./cmd/openai-app-server harness run --script /tmp/oap-first-harness.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 60000 --settle-ms 2000`
+    - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 60000 --settle-ms 2000`
 - Observed successful UI emit payload with live `thread/list` data and command completion.
 
 ### Why
@@ -826,3 +826,78 @@ This validates the end-to-end path across the newly implemented layers: harness 
 - Live command ended with:
   - `harness.run completed`
 
+
+## Step 9: Retroactive Script Archival Under Ticket `scripts/`
+
+Following the request to keep all harness scripts inside the ticket workspace, I copied the two previously executed harness scripts from `/tmp` into the ticket-local `scripts/` directory. I also updated the playbook and prior diary references so the canonical execution paths now point at ticket-managed files.
+
+This keeps all harness fixtures durable, reviewable, and uploadable with the rest of ticket artifacts instead of depending on transient `/tmp` paths.
+
+### Prompt Context
+
+**User prompt (verbatim):** "store all scripts in the ticket under scripts/, retroactively too"
+
+**Assistant interpretation:** Move previously used harness scripts into the ticket `scripts/` directory and update documentation to reference those stored files.
+
+**Inferred user intent:** Ensure reproducibility and long-term traceability of test fixtures within ticket scope.
+
+**Commit (code):** pending
+
+### What I did
+
+- Copied script fixtures into ticket-local scripts directory:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js`
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js`
+- Updated playbook script paths:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md`
+- Updated Step 8 command/script references in this diary to use the ticket-local path.
+
+### Why
+
+- Ticket-local scripts avoid data loss from `/tmp` cleanup and make historical harness runs reproducible.
+
+### What worked
+
+- Both historical scripts were present and copied successfully.
+- Documentation references were updated to canonical ticket paths.
+
+### What didn't work
+
+- N/A
+
+### What I learned
+
+- The scripts directory was already present in the ticket layout, so archival was a direct migration.
+
+### What was tricky to build
+
+- Ensuring retroactive updates did not lose fidelity of originally executed commands while replacing ephemeral paths.
+- Approach: preserved command flags and behavior exactly, changing only script path location.
+
+### What warrants a second pair of eyes
+
+- Confirm any external notes or out-of-band runbooks also stop referencing `/tmp/oap-*.js`.
+
+### What should be done in the future
+
+- Keep all future harness fixtures in `ttmp/.../scripts/` from creation time.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md`
+- How to validate:
+  - `test -f ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js`
+  - `test -f ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js`
+  - `rg -n "/tmp/oap|--script /tmp" -S ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness`
+
+### Technical details
+
+- Copied source files:
+  - `/tmp/oap-first-harness.js`
+  - `/tmp/oap-second-harness.js`
+- Ticket targets:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js`
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js`

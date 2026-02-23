@@ -54,3 +54,4 @@
 - [x] Prepare real harness test plan (script + target app-server transport)
 - [x] **STOP-GATE:** Notify user immediately before launching first real harness test
 - [x] (Pending user confirmation) Run first real harness test
+- [x] Archive all harness scripts under `ttmp/.../scripts/` (retroactive migration from `/tmp`)
