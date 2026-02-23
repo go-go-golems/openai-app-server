@@ -107,3 +107,10 @@
 - [x] Add playbook with explicit probe success/failure markers
 - [x] Run `go test ./...` preflight before live probe run
 - [x] Execute live inbound-request probe run and capture outcome
+
+## Phase 12: Live Escalation Probe (Network Command)
+
+- [x] Add escalation-focused probe script (network command) under `ttmp/.../scripts/`
+- [x] Add playbook for escalation probe markers
+- [x] Run `go test ./...` preflight before escalation probe
+- [x] Execute escalation probe run and capture outcome

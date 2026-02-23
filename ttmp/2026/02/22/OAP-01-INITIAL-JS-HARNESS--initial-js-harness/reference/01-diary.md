@@ -1604,3 +1604,84 @@ Final result: the run completed successfully with `probeStatus:"no_inbound_reque
   - `probeStatus:"no_inbound_request_observed"`
   - `sawRequest:false`
   - `respondedToRequest:false`
+
+
+## Step 19: Live Escalation Probe (Network Command) Results
+
+I added and executed a follow-up live probe intended to increase the chance of approval/escalation request events by asking the model to run a network command (`curl -I https://example.com`). This was meant to validate whether inbound request callbacks can be observed and handled in current runtime conditions.
+
+The run completed deterministically under wait-gate control and returned a successful completion marker. As with the previous probe, no inbound request callback was observed during this run.
+
+### Prompt Context
+
+**User prompt (verbatim):** "continue"
+
+**Assistant interpretation:** Continue implementation and validation work without pausing.
+
+**Inferred user intent:** Keep progressing through phased real-world harness checks and maintain complete ticket traceability.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added escalation-focused live probe script:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/07-live-escalation-request-probe.js`
+- Added matching playbook with command and expected markers:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/06-live-escalation-request-probe-plan.md`
+- Ran preflight:
+  - `go test ./...` (pass)
+- Executed live run:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/07-live-escalation-request-probe.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 120000 --settle-ms 1000 --wait-for-ui-type escalation-probe-complete --wait-for-ui-timeout-ms 90000 --fail-on-wait-ui-ok-false`
+- Captured outcome:
+  - `wait-for-ui-type matched type=escalation-probe-complete`
+  - `harness.run completed`
+  - completion payload included `ok:true`, `probeStatus:"no_inbound_request_observed"`, `sawRequest:false`, `respondedToRequest:false`.
+
+### Why
+
+- Needed an additional live condition that is more likely to require approval semantics, to confirm whether inbound request delivery is absent generally or only in simpler command paths.
+
+### What worked
+
+- New probe script executed correctly and generated structured progress/completion markers.
+- Wait-gated harness run remained deterministic and exited successfully.
+- Notification stream captured model execution behavior while preserving a machine-checkable final status.
+
+### What didn't work
+
+- Even with a network command prompt, no inbound request callback reached `session.onRequest` in this run.
+
+### What I learned
+
+- In this environment profile, escalation-prone prompts still may not surface as inbound request events to the JS harness callback path.
+
+### What was tricky to build
+
+- Balancing strictness versus observability: the probe must fail on runtime/script breakage while still treating “no request observed” as a valid result state.
+- Approach: keep `ok` tied to script health and expose request visibility via `probeStatus`.
+
+### What warrants a second pair of eyes
+
+- Whether codex app-server configuration or policy settings are suppressing/consuming approval events before they reach client request callbacks.
+
+### What should be done in the future
+
+- Run a targeted matrix of live probes varying approval policy and sandbox settings while keeping the same scripted markers for clean comparability.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/07-live-escalation-request-probe.js` (`session.onRequest`, `probeStatus`, `escalation-probe-complete`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/06-live-escalation-request-probe-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 12)
+- How to validate:
+  - run the playbook command and confirm the wait-gate completion marker appears.
+
+### Technical details
+
+- Final completion payload fields of interest:
+  - `type:"escalation-probe-complete"`
+  - `ok:true`
+  - `probeStatus:"no_inbound_request_observed"`
+  - `sawRequest:false`
+  - `respondedToRequest:false`
