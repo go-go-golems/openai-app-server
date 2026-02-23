@@ -72,5 +72,5 @@
 - [x] Add dedicated module-API live-run script under `ttmp/.../scripts/`
 - [x] Add explicit expected-output checks for module-API run in playbook
 - [x] Run `go test ./...` preflight before live run
-- [ ] **STOP-GATE:** Explain next real-run script behavior + exact command and wait for approval
-- [ ] Execute module-API real harness run against live server (after approval)
+- [x] **STOP-GATE:** Explain next real-run script behavior + exact command and wait for approval
+- [x] Execute module-API real harness run against live server (after approval)

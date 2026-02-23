@@ -1060,3 +1060,76 @@ This preserves the requested stop behavior: provide exact script behavior and co
 
 - Real-run command prepared (not executed in this step):
   - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 60000 --settle-ms 2000`
+
+
+## Step 12: Executed Module-API Real Harness Smoke Run
+
+After approval, I ran the prepared live smoke script against `codex app-server` over stdio transport. The run completed successfully and produced the expected module-API success markers.
+
+This validates that the post-`__host` runtime surface (`require("ui"|"rpc"|"clock")`) works end-to-end in a real server session, not just in unit tests.
+
+### Prompt Context
+
+**User prompt (verbatim):** "go run it"
+
+**Assistant interpretation:** Execute the previously presented live harness command exactly as planned.
+
+**Inferred user intent:** Confirm real-world behavior of the new module API integration before proceeding further.
+
+**Commit (code):** pending
+
+### What I did
+
+- Executed approved command from playbook:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 60000 --settle-ms 2000`
+- Captured and reviewed output markers from `ui.emit` lines.
+- Updated task gate status for Phase 7 to complete.
+
+### Why
+
+- This was the required real-run checkpoint to validate module API behavior under live transport and server state.
+
+### What worked
+
+- Command exited cleanly with `harness.run completed`.
+- Script emitted:
+  - `module-api-thread-list` with `ok:true`
+  - `module-api-smoke-complete` with `ok:true`
+- `thread/list` returned valid data payload and thread count.
+
+### What didn't work
+
+- N/A
+
+### What I learned
+
+- The module-based runtime API is operational in live conditions with current codex app-server setup.
+
+### What was tricky to build
+
+- Ensuring the command remained identical to reviewed stop-gate content to avoid drift between reviewed plan and execution.
+- Approach: ran the exact command string from Step 11/playbook and validated only against predeclared output markers.
+
+### What warrants a second pair of eyes
+
+- The returned `thread/list` schema uses `result.data` in current output; consider normalizing in helper scripts if downstream harness logic expects `result.threads`.
+
+### What should be done in the future
+
+- Add a second module-API live scenario using `rpc.request("thread/start")` + `turn/start` with stricter assertion markers on streamed notifications.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/02-module-api-live-run-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- How to validate:
+  - Re-run command above and verify `module-api-thread-list` + `module-api-smoke-complete` success events.
+
+### Technical details
+
+- Observed success markers:
+  - `ui.emit {"count":0,...,"type":"module-api-thread-list"}`
+  - `ui.emit {"ok":true,"type":"module-api-smoke-complete"}`
+  - `harness.run completed`

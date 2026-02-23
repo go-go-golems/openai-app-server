@@ -135,3 +135,15 @@ Step 11: Prepared post-migration module-API live-run gate (new smoke script + pl
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js — New canonical post-migration smoke script
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/02-module-api-live-run-plan.md — New live-run plan with expected output checks
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed step record and stop-gate context
+
+
+## 2026-02-22
+
+Step 12: Executed module-API real harness smoke run after explicit approval and validated expected success events from `require("ui"|"rpc"|"clock")` script.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js — Live script executed against real app-server transport
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/02-module-api-live-run-plan.md — Command and expected-output checks used for execution
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 7 gate tasks completed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed run output and observations recorded
