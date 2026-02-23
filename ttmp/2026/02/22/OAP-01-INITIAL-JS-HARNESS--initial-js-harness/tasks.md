@@ -148,5 +148,5 @@
 - [x] Add/adjust runtime tests for compatibility response shape
 - [x] Update playbooks and design docs with web-source + runtime-observation compatibility note
 - [x] Run `go test ./...` after compatibility update
-- [ ] **STOP-GATE:** Explain compatibility validation run command and wait for approval
-- [ ] Execute compatibility validation live run and confirm decode errors are gone
+- [x] **STOP-GATE:** Explain compatibility validation run command and wait for approval
+- [x] Execute compatibility validation live run and confirm decode errors are gone

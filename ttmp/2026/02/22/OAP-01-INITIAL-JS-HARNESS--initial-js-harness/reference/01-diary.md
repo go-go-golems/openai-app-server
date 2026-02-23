@@ -2320,3 +2320,77 @@ The protocol explicitly defines `CommandExecutionRequestApprovalResponse` as an 
 - Confirmed command approval response schema:
   - `{ \"decision\": \"acceptForSession\" }`
   - `{ \"decision\": { \"acceptWithExecpolicyAmendment\": { \"execpolicy_amendment\": [...] } } }`
+
+## Step 28: Phase 16 Compatibility Validation Run Succeeded (No Approval Decode Errors)
+
+I executed the gated `09-live-sandbox-variant-probe.js` validation run after the `decision`-structured approval payload change and captured a successful completion marker with `ok:true`. This directly validated the protocol-shape fix against the live local app-server runtime.
+
+The run produced inbound approval requests in read-only and danger-full-access variants and accepted them successfully through `approval.acceptForSession`, without any `CommandExecutionRequestApprovalResponse` deserialize errors.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, run 09-js and then close this ticket and move to a new one for continuing. Create a detailed implementation document for describing what lies ahead of us, and try to prefill as many of the tasks as you can in this new ticket. Then work on that new ticket, committing as you go and continuing to keep a detailed diary. Ask me before running a script as usual."
+
+**Assistant interpretation:** Execute the pending real compatibility run, close OAP-01, and transition to a new continuation ticket with a detailed forward implementation plan and prefilled tasks.
+
+**Inferred user intent:** Confirm Phase 16 completion with live evidence, then move into structured execution of remaining architecture scope under a fresh ticket.
+
+**Commit (code):** pending
+
+### What I did
+
+- Ran live command:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 220000 --settle-ms 1000 --wait-for-ui-type sandbox-variant-probe-complete --wait-for-ui-timeout-ms 180000 --fail-on-wait-ui-ok-false`
+- Captured final success marker:
+  - `sandbox-variant-probe-complete` payload had `ok:true`
+  - `totalRequestsObserved:2`, `responseErrors:[]`
+- Confirmed no stderr or stream output containing:
+  - `failed to deserialize CommandExecutionRequestApprovalResponse`
+- Updated `tasks.md` to check both remaining Phase 16 items.
+
+### Why
+
+- Phase 16 required one real run to prove the schema-aligned approval payload works end-to-end against current runtime.
+
+### What worked
+
+- Harness completed successfully under strict wait-gate mode.
+- Approval requests were observed and responded to successfully in live flow.
+- Previously observed approval deserialize failure did not recur.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- The local runtime expects structured approval response objects and accepts current `decision`-wrapped shape.
+
+### What was tricky to build
+
+- High-volume notification output can mask final completion signals and key errors.
+- Approach: rely on explicit wait-gated completion marker and targeted failure-string checks.
+
+### What warrants a second pair of eyes
+
+- Minor: decide whether `09` probe should further reduce noisy notification emission in future runs.
+
+### What should be done in the future
+
+- Close OAP-01 and continue remaining architecture scope in a new ticket with preplanned phases.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js`
+  - `openai-app-server/pkg/js/module_approval.go`
+- How to validate:
+  - Re-run the Phase 16 command and verify final `sandbox-variant-probe-complete` has `ok:true`.
+
+### Technical details
+
+- Per-case results from run:
+  - `on-request_workspace-write`: `status:no_request_observed`
+  - `on-request_read-only`: `status:request_observed`
+  - `on-request_danger-full-access`: `status:request_observed`

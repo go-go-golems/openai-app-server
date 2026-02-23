@@ -343,3 +343,19 @@ Step 27: Validated approval response schema directly from local `codex-rs` proto
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 16 validation items advanced
 - /home/manuel/code/others/llms/codex/codex-rs/app-server-protocol/src/protocol/v2.rs — Source-of-truth response struct/enum definitions
 - /home/manuel/code/others/llms/codex/codex-rs/app-server-protocol/schema/json/CommandExecutionRequestApprovalResponse.json — JSON schema for approval response payload
+
+## 2026-02-22
+
+Step 28: Completed Phase 16 compatibility live validation via 09 sandbox-variant probe; decode errors resolved with structured approval decision payloads.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_approval.go — Structured approval response payload used by live run
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js — Compatibility validation script executed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 16 tasks checked complete
+
+
+## 2026-02-22
+
+Ticket closed after successful Phase 16 compatibility validation; continuation moved to OAP-02.
+

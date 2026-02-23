@@ -1,0 +1,121 @@
+---
+Title: Diary
+Ticket: OAP-02-JS-HARNESS-CONTINUATION
+Status: active
+Topics:
+    - goja
+    - glazed
+    - openai-app-server
+DocType: reference
+Intent: long-term
+Owners: []
+RelatedFiles:
+    - Path: ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js
+      Note: |-
+        Final OAP-01 compatibility validation script run before handoff
+        Final compatibility run before handoff
+    - Path: ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/design/01-continuation-implementation-roadmap.md
+      Note: OAP-02 execution blueprint
+    - Path: ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md
+      Note: |-
+        Phase-by-phase execution checklist
+        Current OAP-02 phase checklist
+ExternalSources:
+    - https://developers.openai.com/codex/app-server/
+Summary: Implementation diary for OAP-02 continuation work after OAP-01 closure.
+LastUpdated: 2026-02-22T22:44:00-05:00
+WhatFor: Preserve an exact implementation trail while completing the remaining harness architecture scope.
+WhenToUse: Read before coding or reviewing OAP-02 work to understand current phase, decisions, and risk context.
+---
+
+
+# Diary
+
+## Goal
+
+Track OAP-02 implementation from the OAP-01 handoff through completion, including exact run outcomes, design decisions, and commit-linked milestones.
+
+## Step 1: Close OAP-01 on Live Compatibility Success and Bootstrap OAP-02 Program
+
+I executed the pending OAP-01 Phase 16 real validation run (`09-live-sandbox-variant-probe.js`) and confirmed a successful completion marker with no approval response deserialize failures. That run cleared the final compatibility gate and allowed closure of OAP-01.
+
+I then created OAP-02, authored a detailed continuation roadmap, and prefilled a full multi-phase task plan that carries remaining architecture scope through to completion with explicit stop-gates before every real harness script run.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, run 09-js and then close this ticket and move to a new one for continuing. Create a detailed implementation document for describing what lies ahead of us, and try to prefill as many of the tasks as you can in this new ticket. Then work on that new ticket, committing as you go and continuing to keep a detailed diary. Ask me before running a script as usual."
+
+**Assistant interpretation:** Complete the final OAP-01 live validation, close OAP-01, create an OAP-02 continuation ticket with detailed roadmap/tasks, and continue implementation with disciplined commits and diary updates.
+
+**Inferred user intent:** Move from foundational/probe phase to structured delivery phase while retaining strict operational gates for real script execution.
+
+**Commit (code):** pending
+
+### What I did
+
+- Ran real harness validation command with wait-gate:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 220000 --settle-ms 1000 --wait-for-ui-type sandbox-variant-probe-complete --wait-for-ui-timeout-ms 180000 --fail-on-wait-ui-ok-false`
+- Captured final signal:
+  - `sandbox-variant-probe-complete` with `ok:true`
+  - `responseErrors:[]`
+  - `totalRequestsObserved:2`
+- Completed OAP-01 remaining tasks and recorded Step 28 in OAP-01 diary/changelog.
+- Closed OAP-01 via:
+  - `docmgr ticket close --ticket OAP-01-INITIAL-JS-HARNESS --changelog-entry "Ticket closed after successful Phase 16 compatibility validation; continuation moved to OAP-02."`
+- Created OAP-02:
+  - `docmgr ticket create-ticket --ticket OAP-02-JS-HARNESS-CONTINUATION --title "JS Harness Continuation" --topics goja,glazed,openai-app-server`
+- Added OAP-02 docs:
+  - `design/01-continuation-implementation-roadmap.md`
+  - `reference/01-diary.md`
+- Replaced OAP-02 `tasks.md` with a prefilled phase plan (Phases 0-8).
+
+### Why
+
+- OAP-01 had one final unresolved gate (live compatibility confirmation). Running it first ensured the handoff happened on a verified baseline, not a speculative one.
+
+### What worked
+
+- Phase 16 validation run completed cleanly with no prior decode-failure signature.
+- OAP-01 closure workflow worked as expected in docmgr.
+- OAP-02 setup now has an execution-ready roadmap and comprehensive task set.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- The current approval module payload shape is stable for local `codex-cli 0.104.0` under the tested scenarios.
+- Explicit stop-gate tasks in the plan reduce ambiguity when transitioning between coding and live operations.
+
+### What was tricky to build
+
+- The live run emitted very high notification volume, which can hide key completion/failure signals.
+- Approach: rely on explicit UI completion marker and strict `--fail-on-wait-ui-ok-false` behavior rather than manual stream inspection.
+
+### What warrants a second pair of eyes
+
+- Optional: additional output filtering in `09` script to keep future compatibility reruns more concise.
+
+### What should be done in the future
+
+- Execute OAP-02 Phase 0 remaining tasks (file relations + doctor + bootstrap commit), then start Phase 1 coding.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/design/01-continuation-implementation-roadmap.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/reference/01-diary.md`
+- How to validate:
+  - `docmgr ticket tickets`
+  - `docmgr doc list --ticket OAP-02-JS-HARNESS-CONTINUATION`
+
+### Technical details
+
+- OAP-01 compatibility run final payload summary:
+  - `workspace-write`: no request observed
+  - `read-only`: request observed (handled)
+  - `danger-full-access`: request observed (handled)
+- No output line matching:
+  - `failed to deserialize CommandExecutionRequestApprovalResponse`
