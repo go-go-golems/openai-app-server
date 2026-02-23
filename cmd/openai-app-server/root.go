@@ -62,8 +62,23 @@ func newRootCommand() (*cobra.Command, error) {
 		return nil, fmt.Errorf("wrap thread list command: %w", err)
 	}
 
+	threadRead, err := newThreadReadCommand(defaults)
+	if err != nil {
+		return nil, fmt.Errorf("build thread read command: %w", err)
+	}
+	threadReadCobra, err := cli.BuildCobraCommand(threadRead,
+		cli.WithParserConfig(cli.CobraParserConfig{
+			ShortHelpSections: []string{schema.DefaultSlug},
+			MiddlewaresFunc:   cli.CobraCommandDefaultMiddlewares,
+		}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("wrap thread read command: %w", err)
+	}
+
 	harnessGroup.AddCommand(harnessRunCobra)
 	threadGroup.AddCommand(threadListCobra)
+	threadGroup.AddCommand(threadReadCobra)
 	root.AddCommand(harnessGroup)
 	root.AddCommand(threadGroup)
 
