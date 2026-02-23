@@ -36,6 +36,30 @@ func NewNotification(method string, params any) (*Message, error) {
 	return &Message{JSONRPC: "2.0", Method: method, Params: rawParams}, nil
 }
 
+func NewResponse(id any, result any) (*Message, error) {
+	rawResult, err := encodeRaw(result)
+	if err != nil {
+		return nil, err
+	}
+	return &Message{JSONRPC: "2.0", ID: id, Result: rawResult}, nil
+}
+
+func NewErrorResponse(id any, code int, message string, data any) (*Message, error) {
+	rawData, err := encodeRaw(data)
+	if err != nil {
+		return nil, err
+	}
+	return &Message{
+		JSONRPC: "2.0",
+		ID:      id,
+		Error: &RPCError{
+			Code:    code,
+			Message: message,
+			Data:    rawData,
+		},
+	}, nil
+}
+
 func (m *Message) IsResponse() bool {
 	if m == nil {
 		return false

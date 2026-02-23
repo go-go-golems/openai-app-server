@@ -63,6 +63,14 @@ func (b *harnessRPCBridge) Notify(ctx context.Context, method string, params any
 	return b.client.Notify(ctx, method, params)
 }
 
+func (b *harnessRPCBridge) Respond(ctx context.Context, id any, result any) error {
+	return b.client.Respond(ctx, id, result)
+}
+
+func (b *harnessRPCBridge) RespondError(ctx context.Context, id any, code int, message string, data any) error {
+	return b.client.RespondError(ctx, id, code, message, data)
+}
+
 type stdoutUIBridge struct {
 	onEmit func(event map[string]any)
 }

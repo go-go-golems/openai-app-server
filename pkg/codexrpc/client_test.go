@@ -170,3 +170,47 @@ func TestNotificationWildcardHandler(t *testing.T) {
 		t.Fatalf("timed out waiting for wildcard notification handler")
 	}
 }
+
+func TestRespondSendsResponseMessage(t *testing.T) {
+	var ft *fakeTransport
+	ft = newFakeTransport(func(msg *Message) {
+		if msg.Method == "initialize" {
+			ft.push(&Message{ID: msg.ID, Result: []byte(`{"capabilities":{}}`)})
+		}
+	})
+
+	c := NewClient(ft)
+	defer func() { _ = c.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := c.Connect(ctx, map[string]any{"clientInfo": map[string]any{"name": "test"}}); err != nil {
+		t.Fatalf("Connect() error = %v", err)
+	}
+
+	if err := c.Respond(ctx, "req-1", map[string]any{"accepted": true}); err != nil {
+		t.Fatalf("Respond() error = %v", err)
+	}
+
+	sent := ft.sentSnapshot()
+	last := sent[len(sent)-1]
+	if last.ID == nil || last.Method != "" {
+		t.Fatalf("expected JSON-RPC response envelope, got method=%q id=%v", last.Method, last.ID)
+	}
+	if string(last.Result) == "" {
+		t.Fatalf("expected non-empty result payload")
+	}
+}
+
+func TestRespondRejectsBeforeHandshake(t *testing.T) {
+	ft := newFakeTransport(nil)
+	c := NewClient(ft)
+	defer func() { _ = c.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	err := c.Respond(ctx, "req-1", map[string]any{"accepted": true})
+	if !errors.Is(err, ErrHandshakeRequired) {
+		t.Fatalf("expected ErrHandshakeRequired, got %v", err)
+	}
+}

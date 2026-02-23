@@ -136,6 +136,38 @@ func (c *Client) Notify(ctx context.Context, method string, params any) error {
 	return nil
 }
 
+func (c *Client) Respond(ctx context.Context, id any, result any) error {
+	if c.getState() != stateReady {
+		return ErrHandshakeRequired
+	}
+	if c.isClosed() {
+		return ErrClientClosed
+	}
+	c.ensureReadLoop()
+
+	msg, err := NewResponse(id, result)
+	if err != nil {
+		return err
+	}
+	return c.transport.Send(ctx, msg)
+}
+
+func (c *Client) RespondError(ctx context.Context, id any, code int, message string, data any) error {
+	if c.getState() != stateReady {
+		return ErrHandshakeRequired
+	}
+	if c.isClosed() {
+		return ErrClientClosed
+	}
+	c.ensureReadLoop()
+
+	msg, err := NewErrorResponse(id, code, message, data)
+	if err != nil {
+		return err
+	}
+	return c.transport.Send(ctx, msg)
+}
+
 func (c *Client) OnNotification(method string, handler NotificationHandler) (unsubscribe func()) {
 	c.notificationMu.Lock()
 	defer c.notificationMu.Unlock()

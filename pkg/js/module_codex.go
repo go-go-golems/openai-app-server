@@ -21,6 +21,12 @@ func registerCodexModule(reg *require.Registry, rt *Runtime) {
 			_ = session.Set("notify", func(call goja.FunctionCall) goja.Value {
 				return rt.rpcNotify(vm, call)
 			})
+			_ = session.Set("respond", func(call goja.FunctionCall) goja.Value {
+				return rt.rpcRespond(vm, call)
+			})
+			_ = session.Set("respondError", func(call goja.FunctionCall) goja.Value {
+				return rt.rpcRespondError(vm, call)
+			})
 			_ = session.Set("onNotification", func(call goja.FunctionCall) goja.Value {
 				return rt.registerHandler(vm, call, "rpcNotification")
 			})

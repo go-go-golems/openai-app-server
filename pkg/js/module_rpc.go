@@ -17,6 +17,12 @@ func registerRPCModule(reg *require.Registry, rt *Runtime) {
 		_ = exports.Set("notify", func(call goja.FunctionCall) goja.Value {
 			return rt.rpcNotify(vm, call)
 		})
+		_ = exports.Set("respond", func(call goja.FunctionCall) goja.Value {
+			return rt.rpcRespond(vm, call)
+		})
+		_ = exports.Set("respondError", func(call goja.FunctionCall) goja.Value {
+			return rt.rpcRespondError(vm, call)
+		})
 		_ = exports.Set("onNotification", func(call goja.FunctionCall) goja.Value {
 			return rt.registerHandler(vm, call, "rpcNotification")
 		})

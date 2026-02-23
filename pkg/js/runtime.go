@@ -14,6 +14,8 @@ import (
 type RPCBridge interface {
 	Request(ctx context.Context, method string, params any) (any, error)
 	Notify(ctx context.Context, method string, params any) error
+	Respond(ctx context.Context, id any, result any) error
+	RespondError(ctx context.Context, id any, code int, message string, data any) error
 }
 
 type UIBridge interface {
@@ -208,6 +210,44 @@ func (rt *Runtime) rpcNotify(vm *goja.Runtime, call goja.FunctionCall) goja.Valu
 		params = call.Arguments[1].Export()
 	}
 	if err := rt.rpc.Notify(context.Background(), method, params); err != nil {
+		panic(vm.NewGoError(err))
+	}
+	return goja.Undefined()
+}
+
+func (rt *Runtime) rpcRespond(vm *goja.Runtime, call goja.FunctionCall) goja.Value {
+	if rt.rpc == nil {
+		return goja.Undefined()
+	}
+	if len(call.Arguments) < 1 {
+		panic(vm.NewTypeError("id is required"))
+	}
+	id := call.Arguments[0].Export()
+	var result any
+	if len(call.Arguments) > 1 {
+		result = call.Arguments[1].Export()
+	}
+	if err := rt.rpc.Respond(context.Background(), id, result); err != nil {
+		panic(vm.NewGoError(err))
+	}
+	return goja.Undefined()
+}
+
+func (rt *Runtime) rpcRespondError(vm *goja.Runtime, call goja.FunctionCall) goja.Value {
+	if rt.rpc == nil {
+		return goja.Undefined()
+	}
+	if len(call.Arguments) < 3 {
+		panic(vm.NewTypeError("id, code and message are required"))
+	}
+	id := call.Arguments[0].Export()
+	code := int(call.Arguments[1].ToInteger())
+	message := call.Arguments[2].String()
+	var data any
+	if len(call.Arguments) > 3 {
+		data = call.Arguments[3].Export()
+	}
+	if err := rt.rpc.RespondError(context.Background(), id, code, message, data); err != nil {
 		panic(vm.NewGoError(err))
 	}
 	return goja.Undefined()
