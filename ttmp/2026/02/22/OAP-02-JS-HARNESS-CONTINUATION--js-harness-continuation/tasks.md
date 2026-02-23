@@ -17,8 +17,13 @@
 - [ ] Add integration tests for `thread read` command using memory transport
 - [ ] Add/adjust tests for malformed `thread/read` payload handling
 - [ ] Run `go test ./...` for Phase 1
-- [ ] Commit Phase 1 changes
-- [ ] Record Phase 1 diary/changelog updates
+- [x] Add typed `ThreadRead` API in `pkg/codexrpc`
+- [x] Replace `thread read` skeleton output with live RPC wiring
+- [x] Add integration tests for `thread read` command using memory transport
+- [x] Add/adjust tests for malformed `thread/read` payload handling
+- [x] Run `go test ./...` for Phase 1
+- [x] Commit Phase 1 changes
+- [x] Record Phase 1 diary/changelog updates
 
 ## Phase 2: State Projection Store
 

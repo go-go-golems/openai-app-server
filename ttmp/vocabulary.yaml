@@ -11,6 +11,8 @@ topics:
       description: Glazed CLI and command schema patterns
     - slug: openai-app-server
       description: OpenAI app server protocol and harness runtime integration
+    - slug: codex
+      description: Codex protocol, app-server semantics, and client/runtime integration topics
 docTypes:
     - slug: design-doc
       description: Structured rationale and architecture notes

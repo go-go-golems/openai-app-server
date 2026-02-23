@@ -15,3 +15,16 @@ Step 1: Bootstrapped OAP-02 from OAP-01 handoff, authored continuation roadmap, 
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/reference/01-diary.md — Initial continuation diary entry
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Prefilled phase-by-phase task checklist
 
+
+## 2026-02-22
+
+Step 2: Implemented Phase 1 thread/read live wiring with typed codexrpc ThreadRead decoder and integration/unit coverage.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/thread_read_command.go — Replaced skeleton command with live RPC wiring
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/thread_read_command_test.go — Added command integration test for thread read
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/threads.go — Added Thread model and ThreadRead method
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/threads_test.go — Added wrapped/direct/malformed payload tests
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 1 task progress updated
+

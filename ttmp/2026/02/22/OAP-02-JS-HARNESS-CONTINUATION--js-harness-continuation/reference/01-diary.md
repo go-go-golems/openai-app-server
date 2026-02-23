@@ -119,3 +119,88 @@ I then created OAP-02, authored a detailed continuation roadmap, and prefilled a
   - `danger-full-access`: request observed (handled)
 - No output line matching:
   - `failed to deserialize CommandExecutionRequestApprovalResponse`
+
+## Step 2: Implement Phase 1 `thread read` Live Wiring and Typed Decode Path
+
+I replaced the placeholder `thread read` command with real codexrpc wiring and added a typed `ThreadRead` API that supports both wrapped and direct payload forms. This moves OAP-02 from planning-only status into active code delivery.
+
+I also added tests at two layers: command integration (memory transport) and codexrpc payload-shape decoding (wrapped/direct/malformed), then validated the repository with `go test ./...`.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 1)
+
+**Assistant interpretation:** Begin implementation work in the new OAP-02 ticket and progress tasks with commits and diary updates.
+
+**Inferred user intent:** Move from plan bootstrap into incremental, test-backed implementation.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added typed thread object + read result decoder in:
+  - `pkg/codexrpc/threads.go`
+  - new method: `Client.ThreadRead(ctx, threadID, includeTurns)`
+- Replaced `thread read` placeholder command with live transport/client call path:
+  - `cmd/openai-app-server/thread_read_command.go`
+  - added timeout handling and injectable client factory for tests
+- Added command-level integration test:
+  - `cmd/openai-app-server/thread_read_command_test.go`
+- Added codexrpc decode tests for wrapped/direct/malformed payloads:
+  - `pkg/codexrpc/threads_test.go`
+- Ran and fixed test cycle:
+  - initial `go test ./...` failed due malformed CLI test path exiting on command error
+  - removed unsafe CLI malformed test and kept malformed coverage in `pkg/codexrpc`
+  - reran `go test ./...` and confirmed pass
+
+### Why
+
+- Phase 1 requires real `thread read` behavior before state/projector and wrapper API phases can build on top.
+
+### What worked
+
+- `thread read` now performs a real RPC call and returns structured JSON output.
+- codexrpc decoder handles both known payload shapes.
+- malformed payload handling is now explicitly covered in unit tests.
+
+### What didn't work
+
+- CLI malformed payload test through root command execution is not stable in-process because command errors terminate execution path.
+- Resolved by moving malformed coverage to codexrpc test layer.
+
+### What I learned
+
+- Command-level error-path tests should avoid execution flows that may exit process-style in this CLI stack.
+
+### What was tricky to build
+
+- Balancing payload compatibility with strict typing in `thread/read` decode.
+- Approach: accept both wrapped and direct response shapes with a final explicit error on unsupported payloads.
+
+### What warrants a second pair of eyes
+
+- Whether we should normalize additional optional thread fields now or defer until Phase 2 state models are added.
+
+### What should be done in the future
+
+- Commit Phase 1 changes, then begin Phase 2 state store scaffolding.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/codexrpc/threads.go` (`Thread`, `ThreadRead`)
+  - `openai-app-server/cmd/openai-app-server/thread_read_command.go` (`newThreadReadClient`, `Run`)
+  - `openai-app-server/pkg/codexrpc/threads_test.go`
+  - `openai-app-server/cmd/openai-app-server/thread_read_command_test.go`
+- How to validate:
+  - `go test ./...`
+  - `go test ./cmd/openai-app-server -run ThreadRead -v`
+
+### Technical details
+
+- `ThreadRead` request params sent:
+  - `threadId`
+  - `includeTurns`
+- accepted response shapes:
+  - `{"thread": {...}}`
+  - `{...thread fields...}`
