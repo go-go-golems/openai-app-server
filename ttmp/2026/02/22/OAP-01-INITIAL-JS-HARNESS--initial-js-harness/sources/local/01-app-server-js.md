@@ -1,3 +1,22 @@
+---
+Title: Imported App Server JS Requirements
+Ticket: OAP-01-INITIAL-JS-HARNESS
+Status: active
+Topics:
+    - goja
+    - openai-app-server
+DocType: reference
+Intent: long-term
+Owners: []
+RelatedFiles: []
+ExternalSources:
+    - https://developers.openai.com/codex/app-server/
+Summary: "Imported source requirements document used as baseline for JS harness design and validation."
+LastUpdated: 2026-02-23T06:35:00-05:00
+WhatFor: "Capture upstream design/requirements text imported from /tmp for traceable ticket analysis."
+WhenToUse: "Reference when validating architecture and playbook assumptions against imported guidance."
+---
+
 Below is a JS-first “harness” API design that sits *on top of* Codex App Server’s bidirectional JSON‑RPC stream (threads → turns → items), with examples of harnesses that react to events/approvals and steer the agent. I’m going to align the API tightly to the App Server concepts because those primitives are already designed to be UI-friendly and composable. ([OpenAI Developers][1])
 
 ---

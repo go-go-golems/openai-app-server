@@ -50,10 +50,10 @@ RelatedFiles:
       Note: Primary analysis outcome captured in this diary step
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md
       Note: Phase-5 pre-flight playbook prepared before stop-gate
-    - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md
+    - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md
       Note: Imported prompt and design source under review
 ExternalSources:
-    - local:app-server-js.md
+    - local:01-app-server-js.md
 Summary: Implementation diary for OAP-01-INITIAL-JS-HARNESS covering ticket setup, source analysis, and architecture planning for openai-app-server.
 LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Maintain a step-by-step implementation and analysis history with commands, failures, and review guidance.
@@ -102,7 +102,7 @@ Write this detailed analysis document (5+ pages) into th enew ticket and upload 
 - Created a design doc for architecture output:
   - `docmgr doc add --ticket OAP-01-INITIAL-JS-HARNESS --doc-type design --title "OpenAI App Server JS Harness Architecture"`
 - Analyzed imported source and codebase hotspots:
-  - Imported source: `sources/local/app-server-js.md`
+  - Imported source: `sources/local/01-app-server-js.md`
   - `go-go-goja` module registry and runtime owner model (`modules/common.go`, `pkg/runtimeowner/*`)
   - `geppetto` JS module bridge and async/event patterns (`pkg/js/modules/geppetto/*`, `pkg/js/runtimebridge/bridge.go`)
   - Current `openai-app-server` scaffold and gaps (`cmd/XXX/main.go`, `go.mod`, `README.md`)
@@ -164,13 +164,13 @@ Write this detailed analysis document (5+ pages) into th enew ticket and upload 
   - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md`
   - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md`
 - How to validate:
-  - Confirm architecture addresses imported requirements by cross-checking sections 5-8 and 14 of the design doc against `sources/local/app-server-js.md`.
+  - Confirm architecture addresses imported requirements by cross-checking sections 5-8 and 14 of the design doc against `sources/local/01-app-server-js.md`.
   - Confirm runtime safety rationale references `go-go-goja/pkg/runtimeowner/runner.go` and `geppetto/pkg/js/runtimebridge/bridge.go`.
 
 ### Technical details
 
 - Primary imported requirements source:
-  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md`
 - Key integration references consulted:
   - `go-go-goja/modules/common.go`
   - `go-go-goja/pkg/runtimeowner/runner.go`
@@ -2084,3 +2084,239 @@ I then migrated the live probe scripts to use `approval.acceptForSession(...)` w
   - `"decline"`
   - `"cancel"`
   - `{ "acceptWithExecpolicyAmendment": [...] }`
+
+
+## Step 25: Ran Approval-Hardening Validation and Confirmed Struct-Shape Requirement
+
+I executed the post-hardening live validation run for `scripts/09-live-sandbox-variant-probe.js` after switching from invalid `approve` payloads to `acceptForSession`. The run completed successfully from the harness perspective and still provided clear case-level metrics.
+
+The key result is that decode errors persist but changed form: local app-server now rejects string payloads for approval responses and reports that it expects a structured `CommandExecutionRequestApprovalResponse` object. This narrows the remaining compatibility gap.
+
+### Prompt Context
+
+**User prompt (verbatim):** "go ahead"
+
+**Assistant interpretation:** Execute the next real validation run immediately.
+
+**Inferred user intent:** Validate whether the approval helper fix removed decode errors.
+
+**Commit (code):** pending
+
+### What I did
+
+- Ran command:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 220000 --settle-ms 1000 --wait-for-ui-type sandbox-variant-probe-complete --wait-for-ui-timeout-ms 180000 --fail-on-wait-ui-ok-false`
+- Captured successful completion marker and final payload:
+  - `wait-for-ui-type matched type=sandbox-variant-probe-complete`
+  - `harness.run completed`
+  - `ok:true`, `sawAnyRequest:true`, `totalRequestsObserved:2`
+- Captured failure signature:
+  - `failed to deserialize CommandExecutionRequestApprovalResponse: invalid type: string "acceptForSession", expected struct CommandExecutionRequestApprovalResponse`
+
+### Why
+
+- Needed to verify whether the first approval helper hardening step fully resolved live decode errors.
+
+### What worked
+
+- Live run remained deterministic and provided stable per-case result metrics.
+- Request callbacks were still observed and handled.
+
+### What didn't work
+
+- Approval response payload still does not match exact local server schema; string payload is insufficient.
+
+### What I learned
+
+- For local `codex-cli 0.104.0`, approval responses appear to require a structured object payload.
+
+### What was tricky to build
+
+- Distinguishing “new failure with better signal” from regression.
+- Approach: compare new error text against previous run to isolate contract evolution from implementation errors.
+
+### What warrants a second pair of eyes
+
+- Exact field schema expected by `CommandExecutionRequestApprovalResponse` in this runtime version.
+
+### What should be done in the future
+
+- Add a compatibility phase to derive and lock the exact structured response shape, then revalidate live.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js`
+  - `openai-app-server/pkg/js/module_approval.go`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 16)
+- How to validate:
+  - rerun the Phase 15/16 validation command and inspect stderr for decode failures.
+
+### Technical details
+
+- New decode failure differs from earlier `unknown variant 'approve'` and specifically indicates “expected struct”.
+
+
+## Step 26: Full Documentation/Plan Validation + Web Analysis Report
+
+I ran a full validation pass across implementation and ticket documentation, then authored a dedicated web-analysis report document with references and required update actions. This pass included both operational validation (`go test`) and ticket hygiene validation (`docmgr doctor`), plus direct review of official web docs.
+
+I also normalized the imported source document to satisfy docmgr conventions and updated all internal references, so the ticket now passes doctor checks cleanly.
+
+### Prompt Context
+
+**User prompt (verbatim):** "Update the documentation and do a full validation of the documentation / implementation plan that you have while you are at it. Write a report on your web analysis and what needs to be updated and store it as a document in the ticket, add links and references and all that."
+
+**Assistant interpretation:** Perform a comprehensive docs/plan audit, include web-source validation, update ticket docs, and add a formal report document.
+
+**Inferred user intent:** Ensure the ticket is technically coherent, traceable, and aligned with official sources before proceeding further.
+
+**Commit (code):** pending
+
+### What I did
+
+- Verified local runtime/tooling:
+  - `codex --version` -> `codex-cli 0.104.0`
+  - `codex app-server --help`
+- Reviewed official source:
+  - `https://developers.openai.com/codex/app-server/`
+- Ran full implementation/doc validation:
+  - `go test ./...` (pass)
+  - `docmgr doctor --ticket OAP-01-INITIAL-JS-HARNESS --stale-after 30`
+- Fixed docmgr hygiene findings:
+  - normalized imported source doc to `sources/local/01-app-server-js.md` with frontmatter
+  - updated ticket references from `app-server-js.md` to `01-app-server-js.md`
+  - reran doctor: all checks passed
+- Authored new report:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/02-codex-app-server-contract-validation-report.md`
+- Updated plan/docs:
+  - advanced `tasks.md` with completed Phase 15 gate/run and new Phase 16 compatibility tasks
+  - updated `design/01-openai-app-server-js-harness-architecture.md` with explicit compatibility note
+  - updated `playbook/08-live-sandbox-variant-probe-plan.md` failure signals for current decode signature
+  - updated `index.md` related files/external references to include the new report and official web docs
+
+### Why
+
+- Needed a single coherent report tying together web-contract expectations, local runtime behavior, and concrete remediation tasks.
+
+### What worked
+
+- Validation commands completed successfully (`go test`, `docmgr doctor`).
+- Report document now captures findings, links, risks, and required updates in one place.
+- Ticket source doc hygiene issues are resolved.
+
+### What didn't work
+
+- Live compatibility issue remains unresolved in implementation: exact approval response struct shape still unknown.
+
+### What I learned
+
+- Current official web examples and local runtime behavior are not fully aligned for approval response payloads in this environment.
+
+### What was tricky to build
+
+- Converting mixed evidence (web docs + live runtime errors) into a concrete, ordered implementation plan.
+- Approach: explicitly separate “confirmed” findings from “inferred” contract expectations and create a dedicated compatibility phase.
+
+### What warrants a second pair of eyes
+
+- The exact JSON schema for command/file approval response objects expected by local app-server build.
+
+### What should be done in the future
+
+- Execute Phase 16: finalize structured response shape, add tests, then run one gated real validation to confirm zero decode errors.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/02-codex-app-server-contract-validation-report.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 16)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md` (compatibility note)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md`
+- How to validate:
+  - `go test ./...`
+  - `docmgr doctor --ticket OAP-01-INITIAL-JS-HARNESS --stale-after 30`
+
+### Technical details
+
+- Web source reviewed:
+  - `https://developers.openai.com/codex/app-server/`
+- Local runtime error driving Phase 16:
+  - `invalid type: string "acceptForSession", expected struct CommandExecutionRequestApprovalResponse`
+
+
+## Step 27: Verified Local codex-rs Protocol Schema and Aligned Approval Payload Shape
+
+After you pointed to the local cloned `codex-rs` repository, I inspected the actual Rust protocol types and test fixtures used by app-server. This removed ambiguity around approval response shape.
+
+The protocol explicitly defines `CommandExecutionRequestApprovalResponse` as an object with a `decision` field, and not as a bare JSON string at the response top level. I updated the module/tests to match that concrete schema.
+
+### Prompt Context
+
+**User prompt (verbatim):** "did you also look here? https://github.com/openai/codex/tree/main/codex-rs/app-server I've cloned it here: /home/manuel/code/others/llms/codex"
+
+**Assistant interpretation:** Validate against authoritative app-server implementation sources, not just web docs.
+
+**Inferred user intent:** Resolve protocol drift by grounding behavior in actual runtime code and schemas.
+
+**Commit (code):** pending
+
+### What I did
+
+- Inspected local clone:
+  - `/home/manuel/code/others/llms/codex/codex-rs/app-server-protocol/src/protocol/v2.rs`
+  - `/home/manuel/code/others/llms/codex/codex-rs/app-server-protocol/schema/json/CommandExecutionRequestApprovalResponse.json`
+  - `/home/manuel/code/others/llms/codex/codex-rs/app-server/tests/suite/v2/turn_start.rs`
+- Confirmed shape:
+  - `CommandExecutionRequestApprovalResponse { decision: CommandExecutionApprovalDecision }`
+- Updated implementation:
+  - `pkg/js/module_approval.go` now returns structured `decision` objects, including nested `acceptWithExecpolicyAmendment` form.
+- Updated tests:
+  - `pkg/js/runtime_test.go` expected payloads aligned to protocol schema.
+- Revalidated:
+  - `go test ./...` (pass)
+
+### Why
+
+- Needed protocol certainty from source-of-truth code to avoid further speculative response-shape iterations.
+
+### What worked
+
+- Rust source and generated schema provided exact structure immediately.
+- Go module and runtime tests now align with confirmed schema.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Web docs may lag or summarize API behavior; local protocol code is the strongest validation source for runtime-specific compatibility.
+
+### What was tricky to build
+
+- Mapping Rust enum serialization to the exact JSON emitted from Go/JS bridge.
+- Approach: mirror schema directly in `module_approval.go` payload construction and assert exact shapes in runtime tests.
+
+### What warrants a second pair of eyes
+
+- One live run still needed to confirm runtime deserializer accepts the newly aligned shape end-to-end.
+
+### What should be done in the future
+
+- Run one gated compatibility validation probe and close Phase 16 if deserialize errors disappear.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/js/module_approval.go` (`acceptWithExecpolicyAmendment`, `respondApprovalDecision`)
+  - `openai-app-server/pkg/js/runtime_test.go` (`TestApprovalModuleDecisionResponses`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/02-codex-app-server-contract-validation-report.md`
+- How to validate:
+  - `go test ./...`
+
+### Technical details
+
+- Confirmed command approval response schema:
+  - `{ \"decision\": \"acceptForSession\" }`
+  - `{ \"decision\": { \"acceptWithExecpolicyAmendment\": { \"execpolicy_amendment\": [...] } } }`

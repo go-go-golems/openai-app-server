@@ -13,7 +13,7 @@ Step 1: Bootstrapped ticket, imported app-server-js source, analyzed go-go-goja 
 
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md — Primary architecture and implementation plan
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed diary entry for setup and analysis
-- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md — Imported requirements source
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md — Imported requirements source
 
 
 ## 2026-02-22
@@ -303,3 +303,43 @@ Step 24: Added `require("approval")` native module with explicit decision helper
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/06-live-escalation-request-probe-plan.md — Updated to approval helper path
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/07-live-approval-matrix-probe-plan.md — Updated to approval helper path
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md — Updated expected-output checks
+
+
+## 2026-02-22
+
+Step 25: Executed post-hardening live validation run; harness completed successfully but approval response still failed decode with `invalid type: string "acceptForSession", expected struct CommandExecutionRequestApprovalResponse`.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js — Validation script executed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md — Validation command and failure-signal contract
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 15 completion recorded and compatibility phase opened
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Step 25 runtime findings
+
+
+## 2026-02-22
+
+Step 26: Completed full documentation/implementation-plan validation, added web-analysis report, normalized imported source doc metadata, and updated plan/docs for compatibility follow-up.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/02-codex-app-server-contract-validation-report.md — New formal web/runtime contract validation report
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md — Added compatibility note for approval response drift
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/index.md — Added report and official external source links
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md — Imported source normalized with frontmatter and numeric prefix
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Added Phase 16 compatibility tasks
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Step 26 full-validation details
+
+
+## 2026-02-22
+
+Step 27: Validated approval response schema directly from local `codex-rs` protocol sources and aligned `approval` module payload shapes + runtime tests.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/module_approval.go — Updated approval payload shape to match protocol schema
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime_test.go — Updated expected approval payloads
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/02-codex-app-server-contract-validation-report.md — Added local codex-rs protocol references and confirmed shape details
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 16 validation items advanced
+- /home/manuel/code/others/llms/codex/codex-rs/app-server-protocol/src/protocol/v2.rs — Source-of-truth response struct/enum definitions
+- /home/manuel/code/others/llms/codex/codex-rs/app-server-protocol/schema/json/CommandExecutionRequestApprovalResponse.json — JSON schema for approval response payload

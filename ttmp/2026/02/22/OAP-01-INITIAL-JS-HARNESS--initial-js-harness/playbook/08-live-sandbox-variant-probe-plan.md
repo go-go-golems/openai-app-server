@@ -76,3 +76,4 @@ go run ./cmd/openai-app-server harness run \
 - timeout before final completion marker.
 - final completion event with `ok:false`.
 - any case result with `status:"case_error"`.
+- stderr contains `failed to deserialize CommandExecutionRequestApprovalResponse` (known compatibility issue to resolve in current phase).

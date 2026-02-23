@@ -35,7 +35,13 @@ func registerApprovalModule(reg *require.Registry, rt *Runtime) {
 			}
 			id := approvalRequestID(vm, call.Arguments[0])
 			amendment := call.Arguments[1].Export()
-			result := map[string]any{"acceptWithExecpolicyAmendment": amendment}
+			result := map[string]any{
+				"decision": map[string]any{
+					"acceptWithExecpolicyAmendment": map[string]any{
+						"execpolicy_amendment": amendment,
+					},
+				},
+			}
 			if rt.rpc == nil {
 				return goja.Undefined()
 			}
@@ -55,7 +61,7 @@ func respondApprovalDecision(rt *Runtime, vm *goja.Runtime, call goja.FunctionCa
 		panic(vm.NewTypeError("request/id is required"))
 	}
 	id := approvalRequestID(vm, call.Arguments[0])
-	if err := rt.rpc.Respond(context.Background(), id, decision); err != nil {
+	if err := rt.rpc.Respond(context.Background(), id, map[string]any{"decision": decision}); err != nil {
 		panic(vm.NewGoError(err))
 	}
 }

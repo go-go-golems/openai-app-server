@@ -138,5 +138,15 @@
 - [x] Migrate live probe scripts to use `approval.acceptForSession` for approval requests
 - [x] Run `go test ./...` after approval API hardening
 - [x] Update playbooks/docs to reflect approval helper usage
-- [ ] **STOP-GATE:** Explain next real validation run and wait for approval
-- [ ] Execute real validation run to confirm no approval response decode errors
+- [x] **STOP-GATE:** Explain next real validation run and wait for approval
+- [x] Execute real validation run to confirm no approval response decode errors
+
+## Phase 16: Approval Response Shape Compatibility (codex-cli 0.104.0)
+
+- [x] Verify exact command/file approval response JSON shape expected by local app-server version
+- [x] Update `approval` module to emit version-compatible structured response payload
+- [x] Add/adjust runtime tests for compatibility response shape
+- [x] Update playbooks and design docs with web-source + runtime-observation compatibility note
+- [x] Run `go test ./...` after compatibility update
+- [ ] **STOP-GATE:** Explain compatibility validation run command and wait for approval
+- [ ] Execute compatibility validation live run and confirm decode errors are gone

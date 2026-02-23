@@ -70,10 +70,10 @@ RelatedFiles:
       Note: Phase-4 runtime bootstrap and host primitives
     - Path: openai-app-server/pkg/js/runtime_test.go
       Note: Phase-4 runtime unit tests
-    - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md
+    - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md
       Note: Imported requirements and API baseline
 ExternalSources:
-    - local:app-server-js.md
+    - local:01-app-server-js.md
 Summary: Architecture and implementation design for a goja-based JS harness runtime and Glazed CLI in openai-app-server, derived from imported requirements and existing go-go-goja/geppetto integration patterns.
 LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Design the first production-ready JS harness for Codex App Server in this repository.
@@ -715,7 +715,7 @@ The first implementation is acceptable when all are true:
 
 ## 17. References Used
 
-- `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md`
+- `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md`
 - `go-go-goja/modules/common.go`
 - `go-go-goja/pkg/runtimeowner/runner.go`
 - `go-go-goja/pkg/runtimeowner/types.go`
@@ -725,3 +725,16 @@ The first implementation is acceptable when all are true:
 - `geppetto/pkg/js/modules/geppetto/api_tools_registry.go`
 - `geppetto/pkg/js/modules/geppetto/api_tool_hooks.go`
 - `geppetto/pkg/js/modules/geppetto/spec/geppetto.d.ts.tmpl`
+
+## 18. Compatibility Note (2026-02-23)
+
+Live validation against local `codex-cli 0.104.0` indicates an approval-response contract mismatch versus current web examples:
+
+- web docs show string decision payloads (for example `\"acceptForSession\"`) as valid.
+- local runtime emitted deserialize errors requiring a structured `CommandExecutionRequestApprovalResponse`.
+- local `codex-rs` protocol source confirms response object shape: `{ "decision": <CommandExecutionApprovalDecision> }`.
+
+Implementation implication:
+
+- approval responses are version-sensitive and must be centralized in one adapter (`pkg/js/module_approval.go`).
+- every response-shape change must be validated with both unit tests and one real harness run.

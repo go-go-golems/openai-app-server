@@ -151,11 +151,17 @@ func TestApprovalModuleDecisionResponses(t *testing.T) {
 		}
 	}
 
-	check(0, "id-1", "accept")
-	check(1, "id-2", "acceptForSession")
-	check(2, "id-3", "decline")
-	check(3, "id-4", "cancel")
-	check(4, "id-5", map[string]any{"acceptWithExecpolicyAmendment": []any{"curl", "-I"}})
+	check(0, "id-1", map[string]any{"decision": "accept"})
+	check(1, "id-2", map[string]any{"decision": "acceptForSession"})
+	check(2, "id-3", map[string]any{"decision": "decline"})
+	check(3, "id-4", map[string]any{"decision": "cancel"})
+	check(4, "id-5", map[string]any{
+		"decision": map[string]any{
+			"acceptWithExecpolicyAmendment": map[string]any{
+				"execpolicy_amendment": []any{"curl", "-I"},
+			},
+		},
+	})
 }
 
 func TestRuntimeNotificationCallbackDispatch(t *testing.T) {
