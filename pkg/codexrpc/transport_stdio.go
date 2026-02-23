@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"sync"
 )
@@ -27,6 +28,7 @@ func NewStdioTransport(command string, args ...string) (*StdioTransport, error) 
 	}
 
 	cmd := exec.Command(command, args...)
+	cmd.Stderr = os.Stderr
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, fmt.Errorf("codexrpc: create stdin pipe: %w", err)
