@@ -28,3 +28,17 @@ Step 2: Implemented Phase 1 thread/read live wiring with typed codexrpc ThreadRe
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/threads_test.go — Added wrapped/direct/malformed payload tests
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 1 task progress updated
 
+
+## 2026-02-22
+
+Step 3: Implemented Phase 2 state projection package (models/store/projector) with bounded retention and replay tests.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/state/models.go — Thread/turn/item projection models
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/state/projector.go — Method-based notification projector
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/state/projector_test.go — Replay projection and malformed-event tests
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/state/store.go — Bounded in-memory projected state store
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/state/store_test.go — Bounds and snapshot isolation tests
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 2 task progress updated
+

@@ -204,3 +204,81 @@ I also added tests at two layers: command integration (memory transport) and cod
 - accepted response shapes:
   - `{"thread": {...}}`
   - `{...thread fields...}`
+
+## Step 3: Implement Phase 2 State Projection Store and Notification Projector
+
+I added a new `pkg/state` package with bounded in-memory storage and a notification projector that materializes thread/turn/item state from app-server event methods. This establishes the state layer needed for harness orchestration and future CLI inspection commands.
+
+The implementation includes replay-style tests that project a representative sequence (`thread/started`, `turn/started`, `item/*`, `turn/diff/updated`, `turn/plan/updated`, `thread/tokenUsage/updated`) and validate the resulting state snapshots.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 1)
+
+**Assistant interpretation:** Continue implementing the new ticket tasks progressively with tests and commits.
+
+**Inferred user intent:** Build out architecture layers in sequence while preserving observable, test-backed progress.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added state models:
+  - `pkg/state/models.go`
+- Added bounded store with query/snapshot APIs:
+  - `pkg/state/store.go`
+- Added method-based event projector:
+  - `pkg/state/projector.go`
+- Added tests:
+  - `pkg/state/store_test.go` (bounds + snapshot isolation)
+  - `pkg/state/projector_test.go` (replay projection + malformed event ignore)
+- Ran validation:
+  - `go test ./...` (pass)
+
+### Why
+
+- The original architecture requires projected state as the backbone for harness policies (plan/diff driven behavior) and CLI visibility.
+
+### What worked
+
+- Bounded retention behavior works for threads, turns, and items.
+- Projector correctly updates `latestDiff`, `latestPlan`, and token usage.
+- Replay tests verify deterministic projection outcomes.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Keeping store snapshot methods copy-safe early avoids mutation leaks into tests and downstream callers.
+
+### What was tricky to build
+
+- Handling heterogeneous event payload shapes without introducing brittle parsing.
+- Approach: normalize with lightweight map/string helpers and project only stable keys per method.
+
+### What warrants a second pair of eyes
+
+- Event schema evolution risk: projector currently targets known stable method payload keys and may need adapter hooks if upstream payloads drift.
+
+### What should be done in the future
+
+- Commit Phase 2 changes and begin Phase 3 JS wrapper expansion.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/state/store.go` (`Store`, bounds and snapshot helpers)
+  - `openai-app-server/pkg/state/projector.go` (`Projector.Apply` method routing)
+  - `openai-app-server/pkg/state/projector_test.go`
+- How to validate:
+  - `go test ./pkg/state -v`
+  - `go test ./...`
+
+### Technical details
+
+- Projected methods currently covered:
+  - `thread/started`, `thread/updated`, `thread/tokenUsage/updated`
+  - `turn/started`, `turn/completed`, `turn/updated`, `turn/diff/updated`, `turn/plan/updated`
+  - `item/started`, `item/completed`, `item/updated`

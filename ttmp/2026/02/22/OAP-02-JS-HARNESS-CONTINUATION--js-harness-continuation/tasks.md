@@ -12,11 +12,6 @@
 
 ## Phase 1: Thread Read Live Wiring
 
-- [ ] Add typed `ThreadRead` API in `pkg/codexrpc`
-- [ ] Replace `thread read` skeleton output with live RPC wiring
-- [ ] Add integration tests for `thread read` command using memory transport
-- [ ] Add/adjust tests for malformed `thread/read` payload handling
-- [ ] Run `go test ./...` for Phase 1
 - [x] Add typed `ThreadRead` API in `pkg/codexrpc`
 - [x] Replace `thread read` skeleton output with live RPC wiring
 - [x] Add integration tests for `thread read` command using memory transport
@@ -27,14 +22,14 @@
 
 ## Phase 2: State Projection Store
 
-- [ ] Create `pkg/state/models.go` with thread/turn/item projection models
-- [ ] Create `pkg/state/store.go` with bounded in-memory store + query APIs
-- [ ] Create `pkg/state/projector.go` for notification-to-state updates
-- [ ] Wire projector with `turn/diff/updated` and `turn/plan/updated` handling
-- [ ] Add replay-based projector unit tests
-- [ ] Run `go test ./...` for Phase 2
-- [ ] Commit Phase 2 changes
-- [ ] Record Phase 2 diary/changelog updates
+- [x] Create `pkg/state/models.go` with thread/turn/item projection models
+- [x] Create `pkg/state/store.go` with bounded in-memory store + query APIs
+- [x] Create `pkg/state/projector.go` for notification-to-state updates
+- [x] Wire projector with `turn/diff/updated` and `turn/plan/updated` handling
+- [x] Add replay-based projector unit tests
+- [x] Run `go test ./...` for Phase 2
+- [x] Commit Phase 2 changes
+- [x] Record Phase 2 diary/changelog updates
 
 ## Phase 3: JS Session Wrapper Expansion
 
