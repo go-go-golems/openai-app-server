@@ -23,7 +23,7 @@ RelatedFiles:
 ExternalSources:
     - https://developers.openai.com/codex/app-server/
 Summary: Implementation diary for OAP-02 continuation work after OAP-01 closure.
-LastUpdated: 2026-02-22T22:44:00-05:00
+LastUpdated: 2026-02-22T23:21:38-05:00
 WhatFor: Preserve an exact implementation trail while completing the remaining harness architecture scope.
 WhenToUse: Read before coding or reviewing OAP-02 work to understand current phase, decisions, and risk context.
 ---
@@ -914,3 +914,81 @@ I completed the non-live Phase 8 tasks by adding a projected-state CLI command, 
 
 - New command path:
   - `openai-app-server harness state-replay --events-file <file>`
+
+## Step 12: Prepare Final Phase 8 Live Smoke Gate Materials and Continue Safely with Existing Workspace State
+
+I resumed OAP-02 execution with the repository state that included one unexpected tracked whitespace-only change under the closed OAP-01 ticket source file. I paused, surfaced it, and continued only after explicit user confirmation to leave it untouched.
+
+I then validated the final full smoke script/playbook assets, confirmed their command path and expected output checks, and prepared this checkpoint for commit before issuing the final stop-gate explanation.
+
+### Prompt Context
+
+**User prompt (verbatim):** "1."
+
+**Assistant interpretation:** Keep the unexpected OAP-01 file change as-is and continue OAP-02 work.
+
+**Inferred user intent:** Avoid reverting teammate/parallel edits and keep forward progress on OAP-02.
+
+**Commit (code):** pending
+
+### What I did
+
+- Re-checked workspace state:
+  - `git status --short`
+  - `git diff -- ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md`
+- Confirmed the unexpected tracked change is whitespace-only (one extra blank line) in closed-ticket imported source doc.
+- Kept that file untouched per explicit user direction.
+- Reviewed final live smoke assets:
+  - `ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/05-final-full-smoke.js`
+  - `ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/05-final-full-smoke-plan.md`
+- Verified the script covers:
+  - live `threads.start` / `turn.start`
+  - approval request handling (`commandExecution` + `fileChange`)
+  - completion marker emission
+  - `threads.read(threadId, true)` verification
+
+### Why
+
+- Preserving user-approved workspace state avoids accidental interference with parallel research edits.
+- Final smoke gate assets must be recorded and committed before real run execution and closure steps.
+
+### What worked
+
+- The OAP-01 diff was cleanly scoped and safe to leave untouched.
+- Final Phase 8 smoke assets are present in the ticket under `scripts/` and `playbooks/`, matching requested storage conventions.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Explicitly separating “unexpected but benign” from “unexpected and risky” changes keeps momentum while respecting collaboration boundaries.
+
+### What was tricky to build
+
+- Avoiding accidental inclusion of unrelated tracked changes while preparing a focused commit.
+- Approach: scope by path and stage only OAP-02 ticket files for this checkpoint commit.
+
+### What warrants a second pair of eyes
+
+- Final live smoke prompt/timeout tuning may still need one iteration if approval events do not appear in-window on first run.
+
+### What should be done in the future
+
+- Commit this Phase 8 prep checkpoint.
+- Issue the final stop-gate explanation/command and wait for explicit approval before running.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/05-final-full-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/05-final-full-smoke-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md`
+- How to validate:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/05-final-full-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 300000 --settle-ms 1000 --wait-for-ui-type final-full-smoke-complete --wait-for-ui-timeout-ms 240000 --fail-on-wait-ui-ok-false`
+
+### Technical details
+
+- OAP-01 unexpected file left untouched by design:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/01-app-server-js.md`
