@@ -34,3 +34,10 @@
 - [x] Run `go test ./...`
 - [x] Commit implementation and test updates
 - [x] Update OAP-04 diary/changelog with implementation details
+
+## Phase 4: Live Validation Gate
+
+- [x] Explain real run command for canonical v2 smoke and wait for approval
+- [x] Execute real harness run for canonical v2 smoke
+- [x] Confirm approval-request and turn-completed branches were observed
+- [x] Record live run outcome in OAP-04 diary/changelog

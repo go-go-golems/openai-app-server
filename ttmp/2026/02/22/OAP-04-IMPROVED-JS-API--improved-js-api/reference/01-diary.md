@@ -57,7 +57,7 @@ RelatedFiles:
 ExternalSources:
     - local:01-app-server-js.md
 Summary: Step-by-step diary for OAP-04 script audit, API redesign analysis, and publication.
-LastUpdated: 2026-02-22T23:50:40-05:00
+LastUpdated: 2026-02-22T23:53:37-05:00
 WhatFor: Preserve exact workflow, findings, and rationale behind the improved JS API proposal.
 WhenToUse: Use when continuing OAP-04 implementation or validating design assumptions.
 ---
@@ -584,3 +584,85 @@ I also added detailed diagnostics so missed coverage branches are explicit: meth
   - `final-full-smoke-v2-complete`
 - Branch-miss field:
   - `summary.branchMissReasons`
+
+## Step 7: Execute Canonical v2 Live Smoke and Verify Branch Coverage in Real Run
+
+I executed the canonical OAP-04 v2 smoke script against the real app-server process and captured a successful completion marker with full branch coverage signals. Unlike earlier OAP-02 runs, this execution observed both the approval-request path and `turn/completed` path in-window.
+
+The final payload showed no branch misses and no runtime errors, confirming that the new helper APIs and diagnostic emissions are effective for real run coverage validation.
+
+### Prompt Context
+
+**User prompt (verbatim):** "run it"
+
+**Assistant interpretation:** Execute the approved real harness gate for the v2 canonical script.
+
+**Inferred user intent:** Validate the migrated helper-based script under real conditions and confirm coverage behavior.
+
+**Commit (code):** pending
+
+### What I did
+
+- Executed:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-04-IMPROVED-JS-API--improved-js-api/scripts/05-final-full-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 320000 --settle-ms 1000 --wait-for-ui-type final-full-smoke-v2-complete --wait-for-ui-timeout-ms 260000 --fail-on-wait-ui-ok-false`
+- Observed approval wait match and policy response:
+  - `final-full-smoke-v2-approval-wait-matched`
+  - `final-full-smoke-v2-approval` with `decision:"acceptForSession"`
+- Observed completion wait success:
+  - `final-full-smoke-v2-turn-wait-completed`
+  - `final-full-smoke-v2-turn-completed-observed`
+- Observed final completion:
+  - `final-full-smoke-v2-complete` with `ok:true`
+  - `summary.branchMissReasons: []`
+  - `summary.requestsObserved: 1`
+  - `summary.turnCompleted: true`
+  - `summary.threadReadWorked: true`
+  - `summary.totalRequests: 1`
+  - `summary.totalNotifications: 1431`
+
+### Why
+
+- Phase 4 required proving that helper-driven coverage diagnostics work in a real run, not only in unit tests.
+
+### What worked
+
+- Real run passed with strict gate (`--fail-on-wait-ui-ok-false`).
+- Approval-request and turn-completed branches were both observed and recorded.
+- Final payload contained rich diagnostics and no branch misses.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- The helper-based script design plus embedded diagnostics resolves the prior ambiguity where runs could be green without proving important branches.
+
+### What was tricky to build
+
+- The runtime generated a high-volume notification stream (1,400+), so compact but structured summary fields were essential.
+- Approach: capture first-N samples and method-count aggregates instead of raw full-stream logging.
+
+### What warrants a second pair of eyes
+
+- Optional: tune timeout windows for slower environments while preserving strict branch assertions.
+
+### What should be done in the future
+
+- Commit this live-run evidence to OAP-04 docs and decide whether to close OAP-04 or continue with additional API polish tasks.
+
+### Code review instructions
+
+- Where to start:
+  - `openai-app-server/ttmp/2026/02/22/OAP-04-IMPROVED-JS-API--improved-js-api/scripts/05-final-full-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-04-IMPROVED-JS-API--improved-js-api/tasks.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-04-IMPROVED-JS-API--improved-js-api/changelog.md`
+- How to validate:
+  - rerun the same command and inspect `final-full-smoke-v2-complete` summary fields.
+
+### Technical details
+
+- Live run thread id:
+  - `019c88d7-bd98-7a40-9603-f6b196bbc00d`
+- Live run turn id:
+  - `019c88d7-bdaa-7a72-89db-6a499b44810f`

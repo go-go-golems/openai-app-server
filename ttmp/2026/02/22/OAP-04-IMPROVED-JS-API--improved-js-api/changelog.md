@@ -58,6 +58,13 @@
 - Updated Phase 3 tasks to mark canonical migration and diagnostics complete.
 - Validation rerun passed:
   - `go test ./... -count=1`
+- Executed real run for canonical v2 smoke script:
+  - completion marker `final-full-smoke-v2-complete` observed with `ok:true`
+  - approval-request branch observed (`requestsObserved: 1`)
+  - turn-completed branch observed (`turnCompleted: true`)
+  - no branch misses (`branchMissReasons: []`)
+  - thread read check passed (`threadReadWorked: true`)
+- Updated tasks with completed Phase 4 live validation gate items.
 
 ## 2026-02-22
 
