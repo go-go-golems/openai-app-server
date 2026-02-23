@@ -83,3 +83,14 @@ Step 6: Implemented Phase 5 built-ins (autopilot + plan gate), added determinist
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/03-builtin-plan-gate-smoke.js — Plan-gate smoke script
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 5 pre-run tasks completed
 
+
+## 2026-02-22
+
+Step 7: Executed first Phase 5 live built-in run (autopilot smoke); run completed successfully with ok:true, but no approval decisions were triggered in-window.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/02-builtin-autopilot-smoke-plan.md — Live run command and expected checks
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/02-builtin-autopilot-smoke.js — Live script executed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md — Phase 5 stop-gate and live-run task completion
+

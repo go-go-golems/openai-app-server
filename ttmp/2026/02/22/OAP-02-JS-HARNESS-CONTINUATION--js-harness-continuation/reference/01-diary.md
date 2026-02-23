@@ -536,3 +536,74 @@ I also added deterministic tests for both built-ins and created OAP-02 scripts/p
   - `{ "decision": "decline" }`
 - Plan gate notification trigger handled:
   - `turn/plan/updated`
+
+## Step 7: Execute First Phase 5 Built-in Live Run (Autopilot Smoke)
+
+I executed the first Phase 5 live run (`02-builtin-autopilot-smoke.js`) after the explicit stop-gate. The run completed successfully with `ok:true` and clean wait-gate completion.
+
+This run did not surface inbound approval requests during the configured window, so the `decisions` array remained empty. That means transport/runtime path and wrapper execution are validated, but the approval-decision branch was not exercised yet in this scenario.
+
+### Prompt Context
+
+**User prompt (verbatim):** "run it"
+
+**Assistant interpretation:** Execute the proposed autopilot smoke harness command now.
+
+**Inferred user intent:** Validate the first built-in smoke scenario against the real app-server runtime.
+
+**Commit (code):** pending
+
+### What I did
+
+- Ran command:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/02-builtin-autopilot-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 240000 --settle-ms 1000 --wait-for-ui-type autopilot-smoke-complete --wait-for-ui-timeout-ms 200000 --fail-on-wait-ui-ok-false`
+- Observed markers:
+  - `autopilot-smoke-start`
+  - `autopilot-smoke-thread-started`
+  - `autopilot-smoke-turn-started`
+  - `autopilot-smoke-complete` with `ok:true` and `decisions:[]`
+  - `wait-for-ui-type matched type=autopilot-smoke-complete`
+
+### Why
+
+- Phase 5 requires a first real built-in run after stop-gate approval.
+
+### What worked
+
+- Real harness flow succeeded and cleanly reached completion marker.
+- No decode/protocol errors surfaced.
+
+### What didn't work
+
+- Approval callbacks were not triggered in this run window, so autopilot decision logic was not exercised live.
+
+### What I learned
+
+- This specific prompt/sandbox combination can complete without surfacing approval requests in the allotted duration.
+
+### What was tricky to build
+
+- Interpreting "successful run" when the core policy branch under test did not activate.
+- Approach: treat this as transport/wrapper smoke success, but keep explicit note that policy branch coverage still requires a request-triggering scenario.
+
+### What warrants a second pair of eyes
+
+- Whether to adjust the autopilot smoke input/sandbox to reliably trigger command approval requests in future runs.
+
+### What should be done in the future
+
+- Proceed to next live gate with a scenario more likely to trigger plan/approval branches (for example the plan-gate smoke script).
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/scripts/02-builtin-autopilot-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/playbooks/02-builtin-autopilot-smoke-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-02-JS-HARNESS-CONTINUATION--js-harness-continuation/tasks.md`
+- How to validate:
+  - rerun the same harness command and verify completion marker output.
+
+### Technical details
+
+- Completion payload:
+  - `{ "type":"autopilot-smoke-complete", "ok":true, "decisions":[] }`

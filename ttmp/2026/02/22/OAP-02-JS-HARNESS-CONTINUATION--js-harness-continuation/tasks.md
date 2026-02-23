@@ -61,8 +61,8 @@
 - [x] Add deterministic fixture/replay tests for both built-ins
 - [x] Add ticket scripts/playbooks for built-ins under `scripts/` and `playbooks/`
 - [x] Run `go test ./...` preflight
-- [ ] **STOP-GATE:** Explain first built-ins live run command and wait for approval
-- [ ] Execute first built-ins live run
+- [x] **STOP-GATE:** Explain first built-ins live run command and wait for approval
+- [x] Execute first built-ins live run
 - [x] Commit Phase 5 changes
 - [x] Record Phase 5 diary/changelog updates
 
