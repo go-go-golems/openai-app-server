@@ -3,6 +3,7 @@ package js
 import (
 	"context"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -84,6 +85,25 @@ func (r *recordingRPCBridge) snapshotRequests() []capturedRequest {
 	out := make([]capturedRequest, len(r.requests))
 	copy(out, r.requests)
 	return out
+}
+
+type blockingRPCBridge struct{}
+
+func (b blockingRPCBridge) Request(ctx context.Context, _ string, _ any) (any, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func (b blockingRPCBridge) Notify(_ context.Context, _ string, _ any) error {
+	return nil
+}
+
+func (b blockingRPCBridge) Respond(_ context.Context, _ any, _ any) error {
+	return nil
+}
+
+func (b blockingRPCBridge) RespondError(_ context.Context, _ any, _ int, _ string, _ any) error {
+	return nil
 }
 
 func TestRuntimeInstallsHostAndCodexModule(t *testing.T) {
@@ -746,4 +766,109 @@ func TestCodexApprovalsSetPolicyAndRespond(t *testing.T) {
 	expectDecision("req-command", map[string]any{"decision": "acceptForSession"})
 	expectDecision("req-file", map[string]any{"decision": "decline"})
 	expectDecision("req-fallback", map[string]any{"decision": "cancel"})
+}
+
+func TestRuntimeRequestUsesConfiguredContext(t *testing.T) {
+	reqCtx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	rt, err := NewRuntime(Options{
+		Name:    "runtime-test-request-context",
+		Context: reqCtx,
+		RPC:     blockingRPCBridge{},
+		UI:      fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      const session = codex.connect();
+      globalThis.__requestCtx = { done: false, error: "" };
+      session.request("thread/list", { limit: 1 }).then(
+        () => {
+          globalThis.__requestCtx.done = true;
+          globalThis.__requestCtx.error = "";
+        },
+        (err) => {
+          globalThis.__requestCtx.done = true;
+          globalThis.__requestCtx.error = String(err);
+        }
+      );
+    `)
+	if err != nil {
+		t.Fatalf("RunString() setup error = %v", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		doneValue, runErr := rt.RunString(`globalThis.__requestCtx.done`)
+		if runErr != nil {
+			t.Fatalf("RunString() done check error = %v", runErr)
+		}
+		if doneValue.ToBoolean() {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("request promise did not settle before deadline")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	errorValue, err := rt.RunString(`globalThis.__requestCtx.error`)
+	if err != nil {
+		t.Fatalf("RunString() error field read failed: %v", err)
+	}
+	errorText := errorValue.String()
+	if !strings.Contains(errorText, "deadline exceeded") && !strings.Contains(errorText, "canceled") {
+		t.Fatalf("expected context cancellation error, got %q", errorText)
+	}
+}
+
+func TestCodexApprovalsSetPolicySupportsAsyncHandlers(t *testing.T) {
+	rpcBridge := &recordingRPCBridge{}
+	rt, err := NewRuntime(Options{
+		Name: "runtime-test-approvals-policy-async",
+		RPC:  rpcBridge,
+		UI:   fakeUIBridge{},
+	})
+	if err != nil {
+		t.Fatalf("NewRuntime() error = %v", err)
+	}
+	defer func() { _ = rt.Close() }()
+
+	_, err = rt.RunString(`
+      const codex = require("codex");
+      const session = codex.connect();
+      session.approvals.setPolicy({
+        command: async (_req) => "acceptForSession",
+        fallback: async (_req) => "cancel"
+      });
+    `)
+	if err != nil {
+		t.Fatalf("RunString() setup error = %v", err)
+	}
+
+	if emitErr := rt.EmitRPCRequest("req-async", "item/commandExecution/requestApproval", map[string]any{"command": "curl -I https://example.com"}); emitErr != nil {
+		t.Fatalf("EmitRPCRequest() async command error = %v", emitErr)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		responses := rpcBridge.snapshot()
+		for _, response := range responses {
+			if response.id == "req-async" {
+				if !reflect.DeepEqual(response.result, map[string]any{"decision": "acceptForSession"}) {
+					t.Fatalf("async policy decision mismatch: got=%#v want=%#v", response.result, map[string]any{"decision": "acceptForSession"})
+				}
+				return
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for async approval response")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }

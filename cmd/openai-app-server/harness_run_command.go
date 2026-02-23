@@ -130,11 +130,12 @@ var newHarnessRunClient = func(ctx context.Context, s *harnessRunSettings) (*cod
 	return client, nil
 }
 
-var newHarnessRuntime = func(rpc js.RPCBridge, ui js.UIBridge) (*js.Runtime, error) {
+var newHarnessRuntime = func(ctx context.Context, rpc js.RPCBridge, ui js.UIBridge) (*js.Runtime, error) {
 	return js.NewRuntime(js.Options{
-		Name: "openai-app-server-harness-run",
-		RPC:  rpc,
-		UI:   ui,
+		Name:    "openai-app-server-harness-run",
+		Context: ctx,
+		RPC:     rpc,
+		UI:      ui,
 	})
 }
 
@@ -239,7 +240,7 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 			}
 		},
 	}
-	runtime, err := newHarnessRuntime(&harnessRPCBridge{client: client}, uiBridge)
+	runtime, err := newHarnessRuntime(reqCtx, &harnessRPCBridge{client: client}, uiBridge)
 	if err != nil {
 		return err
 	}

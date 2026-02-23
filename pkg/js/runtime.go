@@ -24,9 +24,10 @@ type UIBridge interface {
 }
 
 type Options struct {
-	Name string
-	RPC  RPCBridge
-	UI   UIBridge
+	Name    string
+	Context context.Context
+	RPC     RPCBridge
+	UI      UIBridge
 }
 
 type Runtime struct {
@@ -36,6 +37,7 @@ type Runtime struct {
 	runner runtimeowner.Runner
 	rpc    RPCBridge
 	ui     UIBridge
+	ctx    context.Context
 
 	mu sync.RWMutex
 
@@ -101,6 +103,7 @@ func NewRuntime(opts Options) (*Runtime, error) {
 		runner: runner,
 		rpc:    opts.RPC,
 		ui:     opts.UI,
+		ctx:    opts.Context,
 
 		eventMethodCounts: map[string]int{},
 		eventWaiters:      map[int]*runtimeEventWaiter{},
@@ -239,7 +242,7 @@ func (rt *Runtime) rpcRequestPromiseFrom(vm *goja.Runtime, method string, params
 			})
 			return
 		}
-		result, err := rt.rpc.Request(context.Background(), method, params)
+		result, err := rt.rpc.Request(rt.rpcContext(), method, params)
 		_ = rt.runner.Post(context.Background(), "runtime.rpcRequest.resolve", func(_ context.Context, vm *goja.Runtime) {
 			if err != nil {
 				_ = reject(vm.ToValue(err.Error()))
@@ -264,7 +267,7 @@ func (rt *Runtime) rpcNotify(vm *goja.Runtime, call goja.FunctionCall) goja.Valu
 	if len(call.Arguments) > 1 {
 		params = call.Arguments[1].Export()
 	}
-	if err := rt.rpc.Notify(context.Background(), method, params); err != nil {
+	if err := rt.rpc.Notify(rt.rpcContext(), method, params); err != nil {
 		panic(vm.NewGoError(err))
 	}
 	return goja.Undefined()
@@ -282,7 +285,7 @@ func (rt *Runtime) rpcRespond(vm *goja.Runtime, call goja.FunctionCall) goja.Val
 	if len(call.Arguments) > 1 {
 		result = call.Arguments[1].Export()
 	}
-	if err := rt.rpc.Respond(context.Background(), id, result); err != nil {
+	if err := rt.rpc.Respond(rt.rpcContext(), id, result); err != nil {
 		panic(vm.NewGoError(err))
 	}
 	return goja.Undefined()
@@ -302,7 +305,7 @@ func (rt *Runtime) rpcRespondError(vm *goja.Runtime, call goja.FunctionCall) goj
 	if len(call.Arguments) > 3 {
 		data = call.Arguments[3].Export()
 	}
-	if err := rt.rpc.RespondError(context.Background(), id, code, message, data); err != nil {
+	if err := rt.rpc.RespondError(rt.rpcContext(), id, code, message, data); err != nil {
 		panic(vm.NewGoError(err))
 	}
 	return goja.Undefined()
@@ -676,13 +679,11 @@ func (rt *Runtime) applyApprovalPolicy(vm *goja.Runtime, id any, method string, 
 	if err != nil || decisionValue == nil || goja.IsUndefined(decisionValue) || goja.IsNull(decisionValue) {
 		return
 	}
-	decision, err := normalizeApprovalDecision(decisionValue.Export())
-	if err != nil {
+	if isThenableValue(vm, decisionValue) {
+		rt.attachAsyncApprovalPolicyDecision(vm, id, decisionValue)
 		return
 	}
-	if err := rt.rpc.Respond(context.Background(), id, decision); err != nil {
-		panic(vm.NewGoError(err))
-	}
+	rt.respondApprovalDecisionExported(id, decisionValue.Export())
 }
 
 func normalizeApprovalDecision(v any) (map[string]any, error) {
@@ -725,4 +726,67 @@ func int64FromAny(v any) (int64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func (rt *Runtime) rpcContext() context.Context {
+	if rt == nil || rt.ctx == nil {
+		return context.Background()
+	}
+	return rt.ctx
+}
+
+func isThenableValue(vm *goja.Runtime, v goja.Value) bool {
+	if v == nil || goja.IsUndefined(v) || goja.IsNull(v) {
+		return false
+	}
+	obj := v.ToObject(vm)
+	if obj == nil {
+		return false
+	}
+	thenValue := obj.Get("then")
+	_, ok := goja.AssertFunction(thenValue)
+	return ok
+}
+
+func (rt *Runtime) attachAsyncApprovalPolicyDecision(vm *goja.Runtime, id any, decisionValue goja.Value) {
+	obj := decisionValue.ToObject(vm)
+	if obj == nil {
+		rt.respondApprovalDecisionExported(id, "cancel")
+		return
+	}
+
+	thenValue := obj.Get("then")
+	thenFn, ok := goja.AssertFunction(thenValue)
+	if !ok {
+		rt.respondApprovalDecisionExported(id, "cancel")
+		return
+	}
+
+	onFulfilled := vm.ToValue(func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) == 0 {
+			rt.respondApprovalDecisionExported(id, "cancel")
+			return goja.Undefined()
+		}
+		rt.respondApprovalDecisionExported(id, call.Arguments[0].Export())
+		return goja.Undefined()
+	})
+	onRejected := vm.ToValue(func(goja.FunctionCall) goja.Value {
+		rt.respondApprovalDecisionExported(id, "cancel")
+		return goja.Undefined()
+	})
+
+	if _, err := thenFn(obj, onFulfilled, onRejected); err != nil {
+		rt.respondApprovalDecisionExported(id, "cancel")
+	}
+}
+
+func (rt *Runtime) respondApprovalDecisionExported(id any, decisionExported any) {
+	if rt == nil || rt.rpc == nil {
+		return
+	}
+	decision, err := normalizeApprovalDecision(decisionExported)
+	if err != nil {
+		decision = map[string]any{"decision": "cancel"}
+	}
+	_ = rt.rpc.Respond(rt.rpcContext(), id, decision)
 }
