@@ -24,17 +24,20 @@ type harnessRunCommand struct {
 var _ cmds.BareCommand = (*harnessRunCommand)(nil)
 
 type harnessRunSettings struct {
-	ScriptPath     string `glazed:"script"`
-	Transport      string `glazed:"transport"`
-	StdioCommand   string `glazed:"stdio-command"`
-	StdioArgs      string `glazed:"stdio-args"`
-	Model          string `glazed:"model"`
-	Cwd            string `glazed:"cwd"`
-	ApprovalPolicy string `glazed:"approval-policy"`
-	SandboxPolicy  string `glazed:"sandbox-policy"`
-	TimeoutMS      int    `glazed:"timeout-ms"`
-	SettleMS       int    `glazed:"settle-ms"`
-	DryRun         bool   `glazed:"dry-run"`
+	ScriptPath          string `glazed:"script"`
+	Transport           string `glazed:"transport"`
+	StdioCommand        string `glazed:"stdio-command"`
+	StdioArgs           string `glazed:"stdio-args"`
+	Model               string `glazed:"model"`
+	Cwd                 string `glazed:"cwd"`
+	ApprovalPolicy      string `glazed:"approval-policy"`
+	SandboxPolicy       string `glazed:"sandbox-policy"`
+	TimeoutMS           int    `glazed:"timeout-ms"`
+	SettleMS            int    `glazed:"settle-ms"`
+	WaitForUIType       string `glazed:"wait-for-ui-type"`
+	WaitForUITimeoutMS  int    `glazed:"wait-for-ui-timeout-ms"`
+	FailOnWaitUIOkFalse bool   `glazed:"fail-on-wait-ui-ok-false"`
+	DryRun              bool   `glazed:"dry-run"`
 }
 
 type harnessRPCBridge struct {
@@ -60,7 +63,9 @@ func (b *harnessRPCBridge) Notify(ctx context.Context, method string, params any
 	return b.client.Notify(ctx, method, params)
 }
 
-type stdoutUIBridge struct{}
+type stdoutUIBridge struct {
+	onEmit func(event map[string]any)
+}
 
 func (b *stdoutUIBridge) Emit(_ context.Context, event any) error {
 	raw, err := json.Marshal(event)
@@ -68,6 +73,12 @@ func (b *stdoutUIBridge) Emit(_ context.Context, event any) error {
 		return err
 	}
 	fmt.Printf("ui.emit %s\n", string(raw))
+	if b != nil && b.onEmit != nil {
+		var asMap map[string]any
+		if err := json.Unmarshal(raw, &asMap); err == nil {
+			b.onEmit(asMap)
+		}
+	}
 	return nil
 }
 
@@ -134,6 +145,9 @@ func newHarnessRunCommand(defaults config.Defaults) (*harnessRunCommand, error) 
 			fields.New("sandbox-policy", fields.TypeString, fields.WithDefault(defaults.SandboxPolicy), fields.WithHelp("Sandbox policy (phase-1 placeholder)")),
 			fields.New("timeout-ms", fields.TypeInteger, fields.WithDefault(30000), fields.WithHelp("Handshake and RPC timeout in milliseconds")),
 			fields.New("settle-ms", fields.TypeInteger, fields.WithDefault(250), fields.WithHelp("Post-script settle wait for async callbacks (milliseconds)")),
+			fields.New("wait-for-ui-type", fields.TypeString, fields.WithHelp("Wait for a matching ui.emit event type before exiting")),
+			fields.New("wait-for-ui-timeout-ms", fields.TypeInteger, fields.WithDefault(0), fields.WithHelp("Timeout for --wait-for-ui-type (defaults to timeout-ms)")),
+			fields.New("fail-on-wait-ui-ok-false", fields.TypeBool, fields.WithDefault(false), fields.WithHelp("If waiting on a ui type, fail when matched event has ok:false")),
 			fields.New("dry-run", fields.TypeBool, fields.WithDefault(false), fields.WithHelp("Print resolved settings without launching harness")),
 		),
 	)
@@ -162,6 +176,9 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 	fmt.Printf("sandbox-policy=%s\n", s.SandboxPolicy)
 	fmt.Printf("timeout-ms=%d\n", s.TimeoutMS)
 	fmt.Printf("settle-ms=%d\n", s.SettleMS)
+	fmt.Printf("wait-for-ui-type=%s\n", s.WaitForUIType)
+	fmt.Printf("wait-for-ui-timeout-ms=%d\n", s.WaitForUITimeoutMS)
+	fmt.Printf("fail-on-wait-ui-ok-false=%t\n", s.FailOnWaitUIOkFalse)
 	fmt.Printf("dry-run=%t\n", s.DryRun)
 
 	if s.DryRun {
@@ -174,6 +191,9 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 	if s.SettleMS < 0 {
 		s.SettleMS = 0
 	}
+	if s.WaitForUITimeoutMS < 0 {
+		s.WaitForUITimeoutMS = 0
+	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, time.Duration(s.TimeoutMS)*time.Millisecond)
 	defer cancel()
@@ -184,7 +204,31 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 	}
 	defer func() { _ = client.Close() }()
 
-	runtime, err := newHarnessRuntime(&harnessRPCBridge{client: client}, &stdoutUIBridge{})
+	waitForUIType := strings.TrimSpace(s.WaitForUIType)
+	var waitEventCh chan map[string]any
+	if waitForUIType != "" {
+		waitEventCh = make(chan map[string]any, 1)
+	}
+	uiBridge := &stdoutUIBridge{
+		onEmit: func(event map[string]any) {
+			if waitEventCh == nil {
+				return
+			}
+			rawType, ok := event["type"]
+			if !ok {
+				return
+			}
+			eventType, ok := rawType.(string)
+			if !ok || eventType != waitForUIType {
+				return
+			}
+			select {
+			case waitEventCh <- event:
+			default:
+			}
+		},
+	}
+	runtime, err := newHarnessRuntime(&harnessRPCBridge{client: client}, uiBridge)
 	if err != nil {
 		return err
 	}
@@ -205,6 +249,28 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 	}
 	if _, err := runtime.RunString(string(scriptBytes)); err != nil {
 		return fmt.Errorf("execute script: %w", err)
+	}
+	if waitEventCh != nil {
+		waitTimeoutMS := s.WaitForUITimeoutMS
+		if waitTimeoutMS <= 0 {
+			waitTimeoutMS = s.TimeoutMS
+		}
+		if waitTimeoutMS <= 0 {
+			waitTimeoutMS = 30000
+		}
+		select {
+		case event := <-waitEventCh:
+			fmt.Printf("wait-for-ui-type matched type=%s\n", waitForUIType)
+			if s.FailOnWaitUIOkFalse {
+				if okRaw, hasOK := event["ok"]; hasOK {
+					if okBool, okCast := okRaw.(bool); okCast && !okBool {
+						return fmt.Errorf("wait-for-ui-type %q matched with ok:false", waitForUIType)
+					}
+				}
+			}
+		case <-time.After(time.Duration(waitTimeoutMS) * time.Millisecond):
+			return fmt.Errorf("timed out waiting for ui event type %q", waitForUIType)
+		}
 	}
 
 	if s.SettleMS > 0 {

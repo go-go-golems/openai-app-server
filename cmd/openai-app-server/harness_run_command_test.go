@@ -132,3 +132,65 @@ session.request("thread/list", { limit: 1 }).then(() => {});
 		t.Fatalf("expected notification-forward ui payload in output, got:\n%s", out)
 	}
 }
+
+func TestHarnessRunWaitForUIType(t *testing.T) {
+	tmp := t.TempDir()
+	scriptPath := filepath.Join(tmp, "harness-wait.js")
+	script := `
+const codex = require("codex");
+const ui = require("ui");
+const session = codex.connect();
+session.request("thread/list", { limit: 1 }).then((r) => {
+  ui.emit({ type: "done", ok: true, count: (r.threads || []).length });
+});
+`
+	if err := os.WriteFile(scriptPath, []byte(script), 0o644); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+
+	mem := codexrpc.NewMemoryTransport()
+	mem.OnSend = func(msg *codexrpc.Message) {
+		switch msg.Method {
+		case "initialize":
+			mem.Push(&codexrpc.Message{ID: msg.ID, Result: []byte(`{"capabilities":{}}`)})
+		case "thread/list":
+			mem.Push(&codexrpc.Message{ID: msg.ID, Result: []byte(`{"threads":[{"id":"thread-1"}]}`)})
+		}
+	}
+
+	oldClientFactory := newHarnessRunClient
+	newHarnessRunClient = func(ctx context.Context, _ *harnessRunSettings) (*codexrpc.Client, error) {
+		c := codexrpc.NewClient(mem)
+		if err := c.Connect(ctx, map[string]any{"clientInfo": map[string]any{"name": "test"}}); err != nil {
+			return nil, err
+		}
+		return c, nil
+	}
+	defer func() {
+		newHarnessRunClient = oldClientFactory
+	}()
+
+	root, err := newRootCommand()
+	if err != nil {
+		t.Fatalf("newRootCommand() error = %v", err)
+	}
+	root.SetArgs([]string{
+		"harness", "run",
+		"--script", scriptPath,
+		"--transport", "stdio",
+		"--settle-ms", "0",
+		"--timeout-ms", "3000",
+		"--wait-for-ui-type", "done",
+		"--wait-for-ui-timeout-ms", "1000",
+	})
+
+	out, err := captureStdout(func() error {
+		return root.Execute()
+	})
+	if err != nil {
+		t.Fatalf("root.Execute() error = %v", err)
+	}
+	if !strings.Contains(out, "wait-for-ui-type matched type=done") {
+		t.Fatalf("expected wait-for-ui-type match log in output, got:\n%s", out)
+	}
+}
