@@ -65,3 +65,12 @@
 - [x] Run `go test ./...` after migration
 - [x] Commit module API migration changes
 - [x] Record diary/changelog updates for module API migration
+
+## Phase 7: Module-API Real Run Gate (Post-Migration)
+
+- [x] Update ticket design/playbook docs to reflect module API (`require("ui"|"rpc"|"clock")`)
+- [x] Add dedicated module-API live-run script under `ttmp/.../scripts/`
+- [x] Add explicit expected-output checks for module-API run in playbook
+- [x] Run `go test ./...` preflight before live run
+- [ ] **STOP-GATE:** Explain next real-run script behavior + exact command and wait for approval
+- [ ] Execute module-API real harness run against live server (after approval)

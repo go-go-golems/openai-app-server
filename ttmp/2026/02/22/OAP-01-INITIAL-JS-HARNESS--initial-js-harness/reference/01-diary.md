@@ -985,3 +985,78 @@ This is a clean break with no compatibility shim, matching the request to keep t
   - `const ui = require("ui"); ui.emit({...})`
   - `const rpc = require("rpc"); await rpc.request("thread/list", {limit:1})`
   - `const clock = require("clock"); await clock.sleep(250)`
+
+
+## Step 11: Prepared Post-Migration Real-Run Gate (No Live Run Yet)
+
+I prepared the next real harness run as a post-migration validation step for the module API surface (`ui/rpc/clock`), but intentionally did not execute the live command. This includes a dedicated ticket script and playbook with explicit expected-output checks.
+
+This preserves the requested stop behavior: provide exact script behavior and command before launching any real run against a live app-server.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, what's next? when you need to do a real run against the real server, explain what the script doesn, and then stop before you run it. I want to make sure things are ok."
+
+**Assistant interpretation:** Continue implementation and prep work, but pause before any real harness execution and present script intent + exact command for review.
+
+**Inferred user intent:** Maintain strict operational control over live runs while still moving implementation and documentation forward.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added Phase 7 task block for module-API live-run gate:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- Updated architecture doc sections that still described `__host`:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md`
+- Added dedicated post-migration smoke script:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js`
+- Added dedicated playbook with expected output checks:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/02-module-api-live-run-plan.md`
+- Ran preflight tests only (no live run):
+  - `go test ./...` (pass)
+
+### Why
+
+- Needed a deterministic and reviewable post-migration live-run plan before touching real transport execution.
+
+### What worked
+
+- Script/playbook artifacts are now ticket-local and fully reproducible.
+- Test preflight passed without additional code changes.
+
+### What didn't work
+
+- N/A
+
+### What I learned
+
+- The post-migration gate is cleaner when script intent and expected output are written down before execution.
+
+### What was tricky to build
+
+- Balancing progress with the explicit “stop before real run” requirement while still completing actionable setup.
+- Approach: complete all pre-run work, keep stop-gate unchecked in tasks, and halt at command review.
+
+### What warrants a second pair of eyes
+
+- Review the new smoke script’s event expectations before execution, especially around optional notification volume in different server states.
+
+### What should be done in the future
+
+- On user approval, execute the planned live command and record exact output in a new diary step.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/02-module-api-live-run-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- How to validate:
+  - `go test ./...`
+  - `test -f ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js`
+
+### Technical details
+
+- Real-run command prepared (not executed in this step):
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 60000 --settle-ms 2000`

@@ -122,3 +122,16 @@ Step 10: Replaced runtime global `__host` primitives with explicit native JS mod
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_run_command_test.go — Harness integration tests updated to `require("ui")`
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/01-first-real-harness.js — Script fixture switched to `require("ui")`
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/02-live-notification-turn-flow.js — Script fixture switched to `require("ui")`
+
+
+## 2026-02-22
+
+Step 11: Prepared post-migration module-API live-run gate (new smoke script + playbook + design updates + preflight tests) and stopped before any live run.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Added Phase 7 live-run gate tasks and marked pre-run items complete
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md — Updated API descriptions from `__host` to module imports
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/03-module-api-live-smoke.js — New canonical post-migration smoke script
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/02-module-api-live-run-plan.md — New live-run plan with expected output checks
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed step record and stop-gate context

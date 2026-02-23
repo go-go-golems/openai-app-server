@@ -277,18 +277,18 @@ Per CLI invocation (or interactive session):
 
 Critical invariant: **all goja access runs on owner thread**.
 
-### 4.2 Host Primitives
+### 4.2 Host Modules
 
 Adopt imported proposal but implement as strongly typed host modules:
 
-- `__host.rpc.request(method, params) -> Promise`
-- `__host.rpc.notify(method, params) -> void`
-- `__host.rpc.onNotification(fn)`
-- `__host.rpc.onRequest(fn)`
-- `__host.ui.emit(event)`
-- `__host.ui.onEvent(fn)`
-- `__host.clock.nowMs()`
-- `__host.clock.sleep(ms)`
+- `require("rpc").request(method, params) -> Promise`
+- `require("rpc").notify(method, params) -> void`
+- `require("rpc").onNotification(fn)`
+- `require("rpc").onRequest(fn)`
+- `require("ui").emit(event)`
+- `require("ui").onEvent(fn)`
+- `require("clock").nowMs()`
+- `require("clock").sleep(ms)`
 
 Optional modules gated by policy:
 
@@ -299,15 +299,15 @@ The imported document suggests both; we should keep them optional because deploy
 
 ### 4.3 Module Strategy
 
-Use two styles together:
+Use two module layers together:
 
 1. `require("codex")` native module (versioned API).
-2. `globalThis.__host` low-level primitives.
+2. `require("rpc"|"ui"|"clock")` low-level runtime modules.
 
 Why both:
 
-- Low-level primitives are stable kernel-like contracts.
-- `codex` module can evolve ergonomics and wrappers while preserving host primitives.
+- Low-level runtime modules are stable kernel-like contracts.
+- `codex` module can evolve ergonomics and wrappers while preserving runtime module contracts.
 
 ### 4.4 Type Contract Strategy
 
@@ -630,10 +630,10 @@ Deliverable: compilable CLI skeleton.
 
 Deliverable: command to initialize and call `thread/list`.
 
-### Phase 2: goja Runtime + Host Primitives
+### Phase 2: goja Runtime + Host Modules
 
 - Integrate runtimeowner + event loop.
-- Expose `__host` primitives.
+- Expose `require("rpc"|"ui"|"clock")` primitives.
 - Implement `codex.connect` in JS module.
 
 Deliverable: JS script can connect and issue one RPC call.
@@ -680,7 +680,7 @@ Deliverable: production-usable CLI with examples.
 ## 13. Concrete Design Decisions
 
 1. Reuse runtimeowner and geppetto-style owner-thread patterns without modification in first pass.
-2. Use both `__host` primitives and `require("codex")` ergonomic layer.
+2. Use both runtime modules (`require("rpc"|"ui"|"clock")`) and `require("codex")` ergonomic layer.
 3. Keep CLI Glazed-first, not Cobra-only.
 4. Ship stdio transport first; websocket second.
 5. Implement built-in harnesses for approvals, planning, test loops, review gate, compaction.
@@ -725,4 +725,3 @@ The first implementation is acceptable when all are true:
 - `geppetto/pkg/js/modules/geppetto/api_tools_registry.go`
 - `geppetto/pkg/js/modules/geppetto/api_tool_hooks.go`
 - `geppetto/pkg/js/modules/geppetto/spec/geppetto.d.ts.tmpl`
-
