@@ -1685,3 +1685,81 @@ The run completed deterministically under wait-gate control and returned a succe
   - `probeStatus:"no_inbound_request_observed"`
   - `sawRequest:false`
   - `respondedToRequest:false`
+
+
+## Step 20: Prepared Approval/Sandbox Matrix Probe and Stopped Before Live Run
+
+I started the next progressive phase by setting up a matrix-style live probe to compare multiple approval-policy configurations under the same network-command workload. The goal is to gather stronger evidence on when inbound request callbacks are surfaced.
+
+This step intentionally stops before running the next real harness execution. The script, playbook, and test preflight are complete, and the exact run command is now ready for user approval.
+
+### Prompt Context
+
+**User prompt (verbatim):** "continue"
+
+**Assistant interpretation:** Continue phased implementation and validation work.
+
+**Inferred user intent:** Keep momentum while preserving the stop-gate before the next real server harness run.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added new matrix probe script:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/08-live-approval-matrix-probe.js`
+- Added matching playbook:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/07-live-approval-matrix-probe-plan.md`
+- Updated tasks for Phase 13 and checked completed prep items.
+- Ran preflight successfully:
+  - `go test ./...`
+
+### Why
+
+- Needed a controlled experiment across multiple approval policies to validate whether missing inbound request callbacks are environment-wide or policy-dependent.
+
+### What worked
+
+- Script and playbook were added cleanly to ticket-managed paths.
+- Preflight test suite passed without regressions.
+- Phase 13 task list now reflects progressive, gate-based execution.
+
+### What didn't work
+
+- N/A (no live run attempted yet in this step by design).
+
+### What I learned
+
+- We can gather cross-policy visibility signals in a single deterministic harness run by emitting per-case markers and a final aggregate marker.
+
+### What was tricky to build
+
+- Sequencing multiple live cases without losing determinism.
+- Approach: process cases serially, emit structured case-level completion objects, and gate command exit on one final `approval-matrix-probe-complete` marker.
+
+### What warrants a second pair of eyes
+
+- Validate that `on-failure` and `never` are accepted policy values in this runtime profile; case-level error handling is already included if either is rejected.
+
+### What should be done in the future
+
+- Execute the matrix live run after approval and compare per-case `requestDelta` values.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/08-live-approval-matrix-probe.js` (`cases`, `runCase`, `approval-matrix-probe-complete`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/07-live-approval-matrix-probe-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 13)
+- How to validate:
+  - `go test ./...`
+
+### Technical details
+
+- Matrix cases configured in script:
+  - `on-request_workspace-write`
+  - `on-failure_workspace-write`
+  - `never_workspace-write`
+- Final marker emitted by script:
+  - `type:"approval-matrix-probe-complete"`
+  - `ok:<bool>`
+  - `results:[...]`

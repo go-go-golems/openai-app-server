@@ -114,3 +114,11 @@
 - [x] Add playbook for escalation probe markers
 - [x] Run `go test ./...` preflight before escalation probe
 - [x] Execute escalation probe run and capture outcome
+
+## Phase 13: Approval/Sandbox Matrix Probe Gate
+
+- [x] Add matrix probe script covering multiple approval/sandbox combinations
+- [x] Add playbook for matrix probe command and expected markers
+- [x] Run `go test ./...` preflight before matrix probe
+- [ ] **STOP-GATE:** Explain matrix script behavior + exact command and wait for approval
+- [ ] Execute matrix probe live run and capture outcome
