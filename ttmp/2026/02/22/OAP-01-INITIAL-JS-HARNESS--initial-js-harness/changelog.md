@@ -249,3 +249,27 @@ Step 20: Added Phase 13 matrix probe assets (approval-policy variants), ran pref
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/07-live-approval-matrix-probe-plan.md — Matrix probe playbook and exact run command
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Added Phase 13 and checked prep tasks
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Step 20 prep record and stop-gate context
+
+
+## 2026-02-22
+
+Step 21: Executed Phase 13 approval-policy matrix real run; command completed successfully under wait-gated strict mode, with high-volume notification output.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/08-live-approval-matrix-probe.js — Matrix script executed in live run
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/07-live-approval-matrix-probe-plan.md — Live command and marker contract used
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 13 marked completed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Step 21 live-run details
+
+
+## 2026-02-22
+
+Step 22: Added Phase 14 sandbox-variant probe assets with filtered notification output, ran preflight tests, and paused before live execution per stop-gate.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js — New sandbox-variant probe script
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md — Sandbox-variant run plan and exact command
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Added and partially checked Phase 14
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Step 22 prep details and stop-gate context

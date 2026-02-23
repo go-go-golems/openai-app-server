@@ -1763,3 +1763,151 @@ This step intentionally stops before running the next real harness execution. Th
   - `type:"approval-matrix-probe-complete"`
   - `ok:<bool>`
   - `results:[...]`
+
+
+## Step 21: Executed Approval-Policy Matrix Real Harness Run
+
+I ran the approved Phase 13 real harness matrix probe against the live app-server transport. The run executed the multi-case script and completed successfully under wait-gated conditions.
+
+The output volume was very high because the script emitted nearly all notification types, including token-level reasoning deltas. This confirmed the run path worked but made result extraction noisy, which directly motivated the next step to reduce output chatter.
+
+### Prompt Context
+
+**User prompt (verbatim):** "go ahead and then continue"
+
+**Assistant interpretation:** Execute the approved real harness run immediately and keep progressing afterward.
+
+**Inferred user intent:** Unblock live validation while maintaining momentum into the next iteration.
+
+**Commit (code):** pending
+
+### What I did
+
+- Executed approved command:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/08-live-approval-matrix-probe.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 220000 --settle-ms 1000 --wait-for-ui-type approval-matrix-probe-complete --wait-for-ui-timeout-ms 180000 --fail-on-wait-ui-ok-false`
+- Observed process finished successfully:
+  - command exited `0`
+  - `harness.run completed` printed.
+- Confirmed with user that long stream came from high-volume notification forwarding in current script.
+
+### Why
+
+- Needed empirical live data for approval-policy variants before proceeding to deeper sandbox comparison.
+
+### What worked
+
+- Wait-gated run completed successfully with strict fail mode enabled (`--fail-on-wait-ui-ok-false`), indicating successful completion marker and `ok:true` payload.
+- Matrix script exercised multi-case sequencing under one run.
+
+### What didn't work
+
+- Output was excessively verbose due inclusion of reasoning-delta notifications, making manual review inefficient.
+
+### What I learned
+
+- Current harness plumbing handles high-volume event streams without crashing, but default notification forwarding should be filtered for diagnostic runs.
+
+### What was tricky to build
+
+- Distinguishing real signal from event noise in a live run where model reasoning deltas dominate line volume.
+- Approach: treat this run as proof-of-execution, then add targeted output filtering in next script revision.
+
+### What warrants a second pair of eyes
+
+- Review whether any critical notifications were unintentionally omitted in prior summaries due stream volume.
+
+### What should be done in the future
+
+- Use notification filtering for subsequent probes and preserve only lifecycle + command + request/response markers.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/08-live-approval-matrix-probe.js` (`session.onNotification`, `approval-matrix-probe-complete`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/07-live-approval-matrix-probe-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 13 completion)
+- How to validate:
+  - re-run Phase 13 playbook command with current script.
+
+### Technical details
+
+- Success inference for this run is grounded in:
+  - process exit code `0`
+  - `harness.run completed`
+  - strict fail flag enabled (`--fail-on-wait-ui-ok-false`).
+
+
+## Step 22: Prepared Sandbox-Variant Matrix Probe and Stopped Before Live Run
+
+I prepared the next probe phase to compare sandbox behavior while holding approval policy constant. The new script includes notification filtering so the next live run output remains reviewable.
+
+This step intentionally stops before execution to preserve the required pre-run gate. The exact command is prepared in playbook form and ready for approval.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok,c ontinue"
+
+**Assistant interpretation:** Continue work after clarifying the previous output stream.
+
+**Inferred user intent:** Keep progress moving and make the next run easier to inspect.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added sandbox-variant live probe script:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js`
+- Added matching playbook:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md`
+- Updated `tasks.md` Phase 14 prep checklist.
+- Ran preflight:
+  - `go test ./...` (pass)
+
+### Why
+
+- Needed the next experimental axis (sandbox variants) and cleaner output characteristics before another real run.
+
+### What worked
+
+- Script/playbook were added under ticket-managed `scripts/` and `playbook/`.
+- Preflight tests passed with no regressions.
+- Notification filtering logic now suppresses reasoning delta noise.
+
+### What didn't work
+
+- N/A (no live execution attempted in this step by design).
+
+### What I learned
+
+- A small allowlist-style filter in `session.onNotification` materially improves observability for live probes.
+
+### What was tricky to build
+
+- Balancing noise reduction against losing important diagnostics.
+- Approach: suppress only repetitive reasoning-delta methods while retaining thread/turn/item lifecycle and command-related events.
+
+### What warrants a second pair of eyes
+
+- Confirm sandbox value literals (`read-only`, `workspace-write`, `danger-full-access`) are accepted in all target environments.
+
+### What should be done in the future
+
+- Execute the sandbox-variant run after approval and compare per-case `requestDelta` and notification deltas.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/09-live-sandbox-variant-probe.js` (`shouldEmitNotification`, `cases`, `sandbox-variant-probe-complete`)
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/08-live-sandbox-variant-probe-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 14)
+- How to validate:
+  - `go test ./...`
+
+### Technical details
+
+- Sandbox cases configured:
+  - `on-request_workspace-write`
+  - `on-request_read-only`
+  - `on-request_danger-full-access`
+- Final marker:
+  - `type:"sandbox-variant-probe-complete"`

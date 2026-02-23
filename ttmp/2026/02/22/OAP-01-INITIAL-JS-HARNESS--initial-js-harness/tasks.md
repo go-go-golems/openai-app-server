@@ -120,5 +120,13 @@
 - [x] Add matrix probe script covering multiple approval/sandbox combinations
 - [x] Add playbook for matrix probe command and expected markers
 - [x] Run `go test ./...` preflight before matrix probe
-- [ ] **STOP-GATE:** Explain matrix script behavior + exact command and wait for approval
-- [ ] Execute matrix probe live run and capture outcome
+- [x] **STOP-GATE:** Explain matrix script behavior + exact command and wait for approval
+- [x] Execute matrix probe live run and capture outcome
+
+## Phase 14: Sandbox Variant Matrix Probe Gate
+
+- [x] Add sandbox-variant probe script under `ttmp/.../scripts/`
+- [x] Add playbook for sandbox-variant probe markers and command
+- [x] Run `go test ./...` preflight before sandbox-variant probe
+- [ ] **STOP-GATE:** Explain sandbox-variant script behavior + exact command and wait for approval
+- [ ] Execute sandbox-variant probe live run and capture outcome
