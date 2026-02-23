@@ -71,6 +71,17 @@ func (b *stdoutUIBridge) Emit(_ context.Context, event any) error {
 	return nil
 }
 
+func decodeMessagePayload(raw json.RawMessage) any {
+	if len(raw) == 0 {
+		return map[string]any{}
+	}
+	var out any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return string(raw)
+	}
+	return out
+}
+
 var newHarnessRunClient = func(ctx context.Context, s *harnessRunSettings) (*codexrpc.Client, error) {
 	if s.Transport != "stdio" {
 		return nil, fmt.Errorf("unsupported transport %q", s.Transport)
@@ -140,7 +151,7 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 		return fmt.Errorf("--script is required")
 	}
 
-	fmt.Printf("phase-1 harness.run skeleton\n")
+	fmt.Printf("harness.run\n")
 	fmt.Printf("script=%s\n", s.ScriptPath)
 	fmt.Printf("transport=%s\n", s.Transport)
 	fmt.Printf("stdio.command=%s\n", s.StdioCommand)
@@ -178,6 +189,15 @@ func (c *harnessRunCommand) Run(ctx context.Context, vals *values.Values) error 
 		return err
 	}
 	defer func() { _ = runtime.Close() }()
+
+	unsubscribeNotif := client.OnNotification("*", func(_ context.Context, msg *codexrpc.Message) {
+		_ = runtime.EmitRPCNotification(msg.Method, decodeMessagePayload(msg.Params))
+	})
+	defer unsubscribeNotif()
+	unsubscribeReq := client.OnRequest("*", func(_ context.Context, msg *codexrpc.Message) {
+		_ = runtime.EmitRPCRequest(msg.ID, msg.Method, decodeMessagePayload(msg.Params))
+	})
+	defer unsubscribeReq()
 
 	scriptBytes, err := os.ReadFile(s.ScriptPath)
 	if err != nil {

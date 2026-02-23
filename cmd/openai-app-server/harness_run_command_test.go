@@ -72,3 +72,61 @@ session.request("thread/list", { limit: 1 }).then((r) => {
 		t.Fatalf("unexpected outbound method sequence: %q, %q, %q", sent[0].Method, sent[1].Method, sent[2].Method)
 	}
 }
+
+func TestHarnessRunForwardsServerNotificationsToJS(t *testing.T) {
+	tmp := t.TempDir()
+	scriptPath := filepath.Join(tmp, "harness-notif.js")
+	script := `
+const codex = require("codex");
+const session = codex.connect();
+session.onNotification((evt) => {
+  if (evt.method === "thread/started") {
+    __host.ui.emit({ type: "notif-forward", ok: true, id: evt.params.id });
+  }
+});
+session.request("thread/list", { limit: 1 }).then(() => {});
+`
+	if err := os.WriteFile(scriptPath, []byte(script), 0o644); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+
+	mem := codexrpc.NewMemoryTransport()
+	mem.OnSend = func(msg *codexrpc.Message) {
+		switch msg.Method {
+		case "initialize":
+			mem.Push(&codexrpc.Message{ID: msg.ID, Result: []byte(`{"capabilities":{}}`)})
+		case "thread/list":
+			mem.Push(&codexrpc.Message{ID: msg.ID, Result: []byte(`{"threads":[{"id":"thread-1"}]}`)})
+			mem.Push(&codexrpc.Message{Method: "thread/started", Params: []byte(`{"id":"thread-1"}`)})
+		}
+	}
+
+	oldClientFactory := newHarnessRunClient
+	newHarnessRunClient = func(ctx context.Context, _ *harnessRunSettings) (*codexrpc.Client, error) {
+		c := codexrpc.NewClient(mem)
+		if err := c.Connect(ctx, map[string]any{"clientInfo": map[string]any{"name": "test"}}); err != nil {
+			return nil, err
+		}
+		return c, nil
+	}
+	defer func() {
+		newHarnessRunClient = oldClientFactory
+	}()
+
+	root, err := newRootCommand()
+	if err != nil {
+		t.Fatalf("newRootCommand() error = %v", err)
+	}
+	root.SetArgs([]string{"harness", "run", "--script", scriptPath, "--transport", "stdio", "--settle-ms", "400", "--timeout-ms", "3000"})
+
+	out, err := captureStdout(func() error {
+		return root.Execute()
+	})
+	if err != nil {
+		t.Fatalf("root.Execute() error = %v", err)
+	}
+
+	if !strings.Contains(out, `"type":"notif-forward"`) {
+		t.Fatalf("expected notification-forward ui payload in output, got:\n%s", out)
+	}
+}

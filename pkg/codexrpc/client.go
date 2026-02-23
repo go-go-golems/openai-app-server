@@ -234,6 +234,7 @@ func (c *Client) dispatchResponse(msg *Message) {
 func (c *Client) dispatchNotification(msg *Message) {
 	c.notificationMu.RLock()
 	handlers := append([]NotificationHandler{}, c.notifications[msg.Method]...)
+	handlers = append(handlers, c.notifications["*"]...)
 	c.notificationMu.RUnlock()
 
 	for _, h := range handlers {
@@ -246,6 +247,7 @@ func (c *Client) dispatchNotification(msg *Message) {
 func (c *Client) dispatchRequest(msg *Message) {
 	c.requestMu.RLock()
 	handlers := append([]RequestHandler{}, c.requests[msg.Method]...)
+	handlers = append(handlers, c.requests["*"]...)
 	c.requestMu.RUnlock()
 
 	for _, h := range handlers {

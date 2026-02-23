@@ -132,6 +132,22 @@ func (rt *Runtime) EmitRPCNotification(method string, params any) error {
 	})
 }
 
+func (rt *Runtime) EmitRPCRequest(id any, method string, params any) error {
+	return rt.runner.Post(context.Background(), "runtime.emitRPCRequest", func(_ context.Context, vm *goja.Runtime) {
+		payload := vm.ToValue(map[string]any{"id": id, "method": method, "params": params})
+
+		rt.mu.RLock()
+		handlers := append([]goja.Callable{}, rt.rpcRequestHandlers...)
+		rt.mu.RUnlock()
+
+		for _, h := range handlers {
+			if h != nil {
+				_, _ = h(goja.Undefined(), payload)
+			}
+		}
+	})
+}
+
 func (rt *Runtime) EmitUIEvent(event any) error {
 	return rt.runner.Post(context.Background(), "runtime.emitUIEvent", func(_ context.Context, vm *goja.Runtime) {
 		payload := vm.ToValue(event)

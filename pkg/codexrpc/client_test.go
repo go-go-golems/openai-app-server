@@ -147,3 +147,26 @@ func TestInitializeRejectedAfterHandshake(t *testing.T) {
 		t.Fatalf("expected ErrInitializeAlreadyDone, got %v", err)
 	}
 }
+
+func TestNotificationWildcardHandler(t *testing.T) {
+	ft := newFakeTransport(nil)
+	c := NewClient(ft)
+	defer func() { _ = c.Close() }()
+
+	got := make(chan string, 1)
+	_ = c.OnNotification("*", func(_ context.Context, msg *Message) {
+		got <- msg.Method
+	})
+
+	c.ensureReadLoop()
+	ft.push(&Message{Method: "thread/started", Params: []byte(`{"id":"thread-1"}`)})
+
+	select {
+	case method := <-got:
+		if method != "thread/started" {
+			t.Fatalf("unexpected method: %s", method)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for wildcard notification handler")
+	}
+}
