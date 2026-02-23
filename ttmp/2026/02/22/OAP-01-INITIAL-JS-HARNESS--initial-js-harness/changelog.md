@@ -38,3 +38,15 @@ Step 3: Completed Phase 1 bootstrap (module path, real CLI entrypoint, harness/t
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/go.mod — Module path and dependency updates
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/config/defaults.go — Command defaults for transport/session
 
+
+## 2026-02-22
+
+Step 4: Completed Phase 2 codexrpc core (protocol models, transport abstraction, stdio transport skeleton, handshake state machine, and handshake tests) and validated with go test ./... (commit d6812a0de0601a00b2d08ea16509af67a08c0d1c).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/client.go — Handshake state machine and request routing
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/client_test.go — Handshake guardrail tests
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/protocol.go — JSON-RPC envelope definitions
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/transport_stdio.go — Stdio transport implementation skeleton
+

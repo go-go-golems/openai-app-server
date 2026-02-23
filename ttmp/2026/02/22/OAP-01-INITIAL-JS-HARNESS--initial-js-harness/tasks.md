@@ -21,14 +21,14 @@
 
 ## Phase 2: Codex RPC Protocol + Handshake Core
 
-- [ ] Add JSON-RPC protocol models (`request/response/error/notification`)
-- [ ] Add codex transport interface and stdio transport skeleton
-- [ ] Add codex client with strict handshake state machine (`initialize` then `initialized`)
-- [ ] Add request router (correlation map + notification handlers)
-- [ ] Add unit tests: handshake success, pre-handshake rejection, duplicate initialize rejection
-- [ ] Run `go test ./...` (protocol/handshake)
-- [ ] Commit Phase 2 protocol/handshake changes
-- [ ] Record diary step for Phase 2
+- [x] Add JSON-RPC protocol models (`request/response/error/notification`)
+- [x] Add codex transport interface and stdio transport skeleton
+- [x] Add codex client with strict handshake state machine (`initialize` then `initialized`)
+- [x] Add request router (correlation map + notification handlers)
+- [x] Add unit tests: handshake success, pre-handshake rejection, duplicate initialize rejection
+- [x] Run `go test ./...` (protocol/handshake)
+- [x] Commit Phase 2 protocol/handshake changes
+- [x] Record diary step for Phase 2
 
 ## Phase 3: Progressive CLI Validation (No Real Harness Yet)
 

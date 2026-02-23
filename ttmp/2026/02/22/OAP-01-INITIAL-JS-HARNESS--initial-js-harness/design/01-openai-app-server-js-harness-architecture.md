@@ -36,6 +36,16 @@ RelatedFiles:
       Note: Implemented thread command skeleton
     - Path: openai-app-server/go.mod
       Note: Current module placeholder requiring bootstrap changes
+    - Path: openai-app-server/pkg/codexrpc/client.go
+      Note: Implemented handshake state machine and message routing
+    - Path: openai-app-server/pkg/codexrpc/client_test.go
+      Note: Implemented handshake unit tests
+    - Path: openai-app-server/pkg/codexrpc/protocol.go
+      Note: Implemented JSON-RPC envelope types
+    - Path: openai-app-server/pkg/codexrpc/transport.go
+      Note: Implemented transport abstraction
+    - Path: openai-app-server/pkg/codexrpc/transport_stdio.go
+      Note: Implemented stdio transport skeleton
     - Path: openai-app-server/pkg/config/defaults.go
       Note: Implemented transport/session defaults
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/sources/local/app-server-js.md
@@ -47,6 +57,7 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Design the first production-ready JS harness for Codex App Server in this repository.
 WhenToUse: Use as the implementation blueprint for building openai-app-server from the current scaffold.
 ---
+
 
 
 

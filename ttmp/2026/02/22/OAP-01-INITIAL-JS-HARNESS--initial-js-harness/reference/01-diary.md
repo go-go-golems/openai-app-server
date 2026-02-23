@@ -22,6 +22,12 @@ RelatedFiles:
       Note: Phase-1 thread list implementation
     - Path: openai-app-server/go.mod
       Note: Module path and dependency bootstrap for phase-1
+    - Path: openai-app-server/pkg/codexrpc/client.go
+      Note: Phase-2 handshake and routing implementation
+    - Path: openai-app-server/pkg/codexrpc/client_test.go
+      Note: Phase-2 handshake behavior tests
+    - Path: openai-app-server/pkg/codexrpc/transport_stdio.go
+      Note: Phase-2 stdio transport skeleton
     - Path: openai-app-server/pkg/config/defaults.go
       Note: Phase-1 defaults implementation
     - Path: openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/design/01-openai-app-server-js-harness-architecture.md
@@ -35,6 +41,7 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Maintain a step-by-step implementation and analysis history with commands, failures, and review guidance.
 WhenToUse: Read before continuing implementation to understand decisions, risks, and validation paths.
 ---
+
 
 
 
@@ -343,4 +350,100 @@ After adding the detailed tasks, work on them one by one, checking them off, kee
   - `cmd/openai-app-server/harness_run_command.go`
   - `cmd/openai-app-server/thread_list_command.go`
   - `pkg/config/defaults.go`
+
+
+## Step 4: Phase 2 Protocol and Handshake Core
+
+I implemented the first functional runtime core under `pkg/codexrpc`: JSON-RPC envelope types, a transport abstraction, stdio transport skeleton, and a client that enforces the required handshake order (`initialize` then `initialized`) before allowing regular methods.
+
+I also added targeted unit tests that exercise handshake success and guardrail failures so we can iterate on protocol behavior without needing a live harness or server process yet.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 3)
+
+**Assistant interpretation:** Continue phase-by-phase implementation with concrete progress, tests, and commits.
+
+**Inferred user intent:** Build a reliable foundation before first live harness execution and keep each increment verifiable.
+
+**Commit (code):** d6812a0de0601a00b2d08ea16509af67a08c0d1c — "Add codexrpc client with handshake state machine"
+
+### What I did
+
+- Added protocol and error models:
+  - `pkg/codexrpc/protocol.go`
+  - `pkg/codexrpc/errors.go`
+- Added transport interfaces and stdio transport skeleton:
+  - `pkg/codexrpc/transport.go`
+  - `pkg/codexrpc/transport_stdio.go`
+- Added client with handshake and routing logic:
+  - `pkg/codexrpc/client.go`
+  - handshake states: `stateNew`, `stateInitialized`, `stateReady`, `stateClosed`
+  - request validation for pre/post handshake behavior
+  - request correlation map for response routing
+  - notification/request subscription handlers
+- Added unit tests for phase-2 acceptance criteria:
+  - `pkg/codexrpc/client_test.go`
+  - tests:
+    - `TestConnectHandshakeSuccess`
+    - `TestRequestRejectsBeforeHandshake`
+    - `TestInitializeRejectedAfterHandshake`
+- Ran formatting and tests:
+  - `gofmt -w ...`
+  - `go test ./...` (pass)
+
+### Why
+
+- The handshake rules are protocol-critical and should fail fast before any higher-level harness logic is introduced.
+- Correlation routing and subscriptions are foundational for turn/item event processing in later phases.
+
+### What worked
+
+- Handshake state enforcement behaved as expected in unit tests.
+- Request/response routing through the pending-correlation map worked with the fake transport.
+- Entire repository test run passed after introducing the new package.
+
+### What didn't work
+
+- N/A for this step; no implementation blockers beyond routine directory creation handled in prior step.
+
+### What I learned
+
+- Keeping handshake validation in `Request`/`Notify` gates greatly simplifies correctness reasoning.
+- Even at this phase, a fake transport unlocks meaningful protocol tests without requiring external services.
+
+### What was tricky to build
+
+- Balancing a useful stdio transport skeleton with cancellation behavior was the sharp edge.
+- Symptom: `Recv` on blocking reads is hard to cancel cleanly without a more advanced loop structure.
+- Approach: implemented a practical phase-2 skeleton using a goroutine-per-read pattern; this is acceptable for now and can be optimized in later phases.
+
+### What warrants a second pair of eyes
+
+- `StdioTransport.Recv` cancellation strategy should be revisited before production load.
+- `Client.readLoop` currently closes client on transport read error; review whether retry semantics are desired in future phases.
+
+### What should be done in the future
+
+- Phase 3 should wire CLI commands to this client using a fake/in-memory transport integration test first.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/pkg/codexrpc/client.go` (`Connect`, `Request`, `Notify`, `readLoop`)
+  - `openai-app-server/pkg/codexrpc/client_test.go` (handshake behavior tests)
+  - `openai-app-server/pkg/codexrpc/transport_stdio.go` (`Send`, `Recv`, `Close`)
+- How to validate:
+  - `go test ./...`
+  - `go test ./pkg/codexrpc -run TestConnectHandshakeSuccess -count=1`
+
+### Technical details
+
+- Handshake enforcement details:
+  - only `initialize` allowed in `stateNew`
+  - only `initialized` notify allowed in `stateInitialized`
+  - all regular methods require `stateReady`
+- Routing details:
+  - request IDs are marshaled into stable keys via `idKey(...)`
+  - response routing deletes pending entries before delivery
 
