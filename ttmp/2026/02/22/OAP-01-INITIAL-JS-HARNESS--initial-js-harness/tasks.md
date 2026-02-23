@@ -52,5 +52,5 @@
 ## Phase 5: First Real Harness Test Gate
 
 - [x] Prepare real harness test plan (script + target app-server transport)
-- [ ] **STOP-GATE:** Notify user immediately before launching first real harness test
-- [ ] (Pending user confirmation) Run first real harness test
+- [x] **STOP-GATE:** Notify user immediately before launching first real harness test
+- [x] (Pending user confirmation) Run first real harness test

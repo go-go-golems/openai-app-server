@@ -83,3 +83,15 @@ Step 6: Completed Phase 4 JS runtime host primitives and codex module skeleton w
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime.go — Runtime bootstrap and __host primitives
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/js/runtime_test.go — Runtime module/callback tests
 
+
+## 2026-02-22
+
+Step 8: Ran first real harness test post-gate against live codex app-server transport and validated end-to-end request/response flow.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_run_command.go — Live harness command implementation used in first real test
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/harness_run_command_test.go — Command-level integration test for harness run
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/01-first-real-harness-test-plan.md — Execution plan used for first real run
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase-5 gate and real test tasks completed
+

@@ -15,7 +15,11 @@ RelatedFiles:
     - Path: go-go-goja/pkg/runtimeowner/runner.go
       Note: Thread-safety findings captured in step notes
     - Path: openai-app-server/cmd/openai-app-server/harness_run_command.go
-      Note: Phase-1 harness run implementation
+      Note: |-
+        Phase-1 harness run implementation
+        Step 8 live harness execution implementation
+    - Path: openai-app-server/cmd/openai-app-server/harness_run_command_test.go
+      Note: Step 8 harness integration test
     - Path: openai-app-server/cmd/openai-app-server/root.go
       Note: Phase-1 command tree implementation
     - Path: openai-app-server/cmd/openai-app-server/thread_list_command.go
@@ -55,6 +59,7 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Maintain a step-by-step implementation and analysis history with commands, failures, and review guidance.
 WhenToUse: Read before continuing implementation to understand decisions, risks, and validation paths.
 ---
+
 
 
 
@@ -727,4 +732,97 @@ This step exists to enforce the requested execution gate: everything is ready fo
 
 - No runtime commands executed in this step beyond documentation/tooling updates.
 - Live harness command is documented but intentionally not run.
+
+
+## Step 8: First Real Harness Test Execution (Post-Gate)
+
+After user confirmation ("go ahead"), I executed the first real harness test against a live app-server process using `codex app-server --listen stdio://` as the stdio backend. The run completed successfully and the harness script received a live `thread/list` response, which was emitted through the UI bridge.
+
+This validates the end-to-end path across the newly implemented layers: harness CLI command, codexrpc handshake/routing, goja runtime host, codex module, and async callback settling.
+
+### Prompt Context
+
+**User prompt (verbatim):** "go ahead"
+
+**Assistant interpretation:** Proceed past the previously requested stop-gate and run the first live harness test.
+
+**Inferred user intent:** Validate real runtime integration now that phased preparation is complete.
+
+**Commit (code):** pending (this step includes both code + docs updates before final commit)
+
+### What I did
+
+- Implemented real harness execution path in CLI (replacing placeholder behavior):
+  - `cmd/openai-app-server/harness_run_command.go`
+  - added:
+    - live client creation (`newHarnessRunClient`)
+    - js runtime creation (`newHarnessRuntime`)
+    - bridge adapters (`harnessRPCBridge`, `stdoutUIBridge`)
+    - script loading + execution + settle wait
+- Added command integration test for harness run with in-memory transport:
+  - `cmd/openai-app-server/harness_run_command_test.go`
+- Improved stdio transport diagnostics:
+  - `pkg/codexrpc/transport_stdio.go` now forwards child stderr to parent stderr.
+- Ran full test suite:
+  - `go test ./...` (pass)
+- Ran first real harness test script:
+  - Script file: `/tmp/oap-first-harness.js`
+  - Command:
+    - `go run ./cmd/openai-app-server harness run --script /tmp/oap-first-harness.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 60000 --settle-ms 2000`
+- Observed successful UI emit payload with live `thread/list` data and command completion.
+
+### Why
+
+- The stop-gate condition had been explicitly satisfied by user confirmation.
+- A live run was required to validate that our phased implementation works beyond synthetic tests.
+
+### What worked
+
+- Handshake and request path worked against live app-server.
+- Harness script executed via goja runtime and required `codex` module successfully.
+- Async request promise resolved and emitted UI event payload with thread data.
+- Command completed cleanly with `harness.run completed`.
+
+### What didn't work
+
+- During environment discovery, expected command `codex-app-server` was not found in PATH:
+  - Error: `zsh:1: command not found: codex-app-server`
+  - Resolution: switched to available command `codex app-server --listen stdio://`.
+
+### What I learned
+
+- The actual local runtime entrypoint is `codex app-server`, not `codex-app-server`.
+- The implemented runtime/codex module is sufficient for basic live request roundtrips.
+
+### What was tricky to build
+
+- Ensuring harness-run code remained testable while adding live transport integration.
+- Symptom: direct construction of transport/runtime would have made command testing brittle.
+- Approach: introduced injectable factories (`newHarnessRunClient`, `newHarnessRuntime`) and verified command path with memory transport tests.
+
+### What warrants a second pair of eyes
+
+- `harness run` still logs legacy banner text (`phase-1 harness.run skeleton`) even though behavior is now real; this should be cleaned for UX clarity.
+- Consider adding structured output mode (Glazed rows) instead of stdout lines for UI events.
+
+### What should be done in the future
+
+- Add a second real harness scenario that exercises event subscriptions (`session.onNotification`) with turn/item stream updates.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/cmd/openai-app-server/harness_run_command.go` (`Run`, `newHarnessRunClient`, bridge types)
+  - `openai-app-server/cmd/openai-app-server/harness_run_command_test.go` (`TestHarnessRunCommandWithMemoryTransport`)
+  - `openai-app-server/pkg/codexrpc/transport_stdio.go` (stderr forwarding)
+- How to validate:
+  - `go test ./...`
+  - run first live harness command exactly as recorded above.
+
+### Technical details
+
+- Live output included successful payload:
+  - `ui.emit {"ok":true,"result":{...},"type":"first-real-test"}`
+- Live command ended with:
+  - `harness.run completed`
 

@@ -29,7 +29,11 @@ RelatedFiles:
     - Path: openai-app-server/cmd/XXX/main.go
       Note: Current CLI scaffold gap to replace
     - Path: openai-app-server/cmd/openai-app-server/harness_run_command.go
-      Note: Implemented harness command skeleton
+      Note: |-
+        Implemented harness command skeleton
+        Implemented live harness execution path
+    - Path: openai-app-server/cmd/openai-app-server/harness_run_command_test.go
+      Note: Implemented harness run command integration test
     - Path: openai-app-server/cmd/openai-app-server/root.go
       Note: Implemented phase-1 Glazed root command scaffold
     - Path: openai-app-server/cmd/openai-app-server/thread_list_command.go
@@ -55,7 +59,9 @@ RelatedFiles:
     - Path: openai-app-server/pkg/codexrpc/transport.go
       Note: Implemented transport abstraction
     - Path: openai-app-server/pkg/codexrpc/transport_stdio.go
-      Note: Implemented stdio transport skeleton
+      Note: |-
+        Implemented stdio transport skeleton
+        Enabled stderr passthrough for live diagnostics
     - Path: openai-app-server/pkg/config/defaults.go
       Note: Implemented transport/session defaults
     - Path: openai-app-server/pkg/js/module_codex.go
@@ -73,6 +79,7 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Design the first production-ready JS harness for Codex App Server in this repository.
 WhenToUse: Use as the implementation blueprint for building openai-app-server from the current scaffold.
 ---
+
 
 
 
