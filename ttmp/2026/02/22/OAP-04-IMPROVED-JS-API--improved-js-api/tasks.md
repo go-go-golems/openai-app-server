@@ -30,6 +30,6 @@
 
 - [ ] Migrate `scripts/05-final-full-smoke.js` to improved API as canonical v2 reference
 - [ ] Add diagnostic `ui.emit` instrumentation for branch-miss reasons in canonical smoke
-- [ ] Run `go test ./...`
-- [ ] Commit implementation and test updates
-- [ ] Update OAP-04 diary/changelog with implementation details
+- [x] Run `go test ./...`
+- [x] Commit implementation and test updates
+- [x] Update OAP-04 diary/changelog with implementation details
