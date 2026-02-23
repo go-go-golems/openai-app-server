@@ -19,13 +19,19 @@ RelatedFiles:
     - Path: openai-app-server/cmd/openai-app-server/root.go
       Note: Phase-1 command tree implementation
     - Path: openai-app-server/cmd/openai-app-server/thread_list_command.go
-      Note: Phase-1 thread list implementation
+      Note: |-
+        Phase-1 thread list implementation
+        Phase-3 command wiring
+    - Path: openai-app-server/cmd/openai-app-server/thread_list_command_test.go
+      Note: Phase-3 integration test
     - Path: openai-app-server/go.mod
       Note: Module path and dependency bootstrap for phase-1
     - Path: openai-app-server/pkg/codexrpc/client.go
       Note: Phase-2 handshake and routing implementation
     - Path: openai-app-server/pkg/codexrpc/client_test.go
       Note: Phase-2 handshake behavior tests
+    - Path: openai-app-server/pkg/codexrpc/memory_transport.go
+      Note: Phase-3 fake transport
     - Path: openai-app-server/pkg/codexrpc/transport_stdio.go
       Note: Phase-2 stdio transport skeleton
     - Path: openai-app-server/pkg/config/defaults.go
@@ -41,6 +47,7 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Maintain a step-by-step implementation and analysis history with commands, failures, and review guidance.
 WhenToUse: Read before continuing implementation to understand decisions, risks, and validation paths.
 ---
+
 
 
 
@@ -446,4 +453,93 @@ I also added targeted unit tests that exercise handshake success and guardrail f
 - Routing details:
   - request IDs are marshaled into stable keys via `idKey(...)`
   - response routing deletes pending entries before delivery
+
+
+## Step 5: Phase 3 CLI Wiring with Fake Transport Validation
+
+I connected `thread list` to the `codexrpc` client API path, added a `thread read` command skeleton for output-shape continuity, and validated the command flow with an in-memory transport integration test instead of a live server. This keeps progress real while respecting the stop-gate before first real harness test.
+
+The phase-3 test verifies the full command path (`root -> thread list -> client connect -> thread/list request`) using deterministic fake responses and checks both output content and outbound RPC method sequence.
+
+### Prompt Context
+
+**User prompt (verbatim):** (see Step 3)
+
+**Assistant interpretation:** Continue progressive implementation and test each phase without jumping to live harness execution yet.
+
+**Inferred user intent:** Prove real integration behavior incrementally with controlled tests before any live harness run.
+
+**Commit (code):** 41d221684a31f074d1c4cef237445fa7c065378d — "Wire thread CLI commands to codexrpc client"
+
+### What I did
+
+- Added codexrpc support for thread operations:
+  - `pkg/codexrpc/threads.go` (`ThreadList` parsing helper)
+  - `pkg/codexrpc/memory_transport.go` (in-memory transport for integration tests)
+- Wired CLI command path:
+  - Updated `cmd/openai-app-server/thread_list_command.go` to build/connect a client and call `ThreadList`
+  - Added timeout handling for request execution
+- Added `thread read` command skeleton with structured JSON output:
+  - `cmd/openai-app-server/thread_read_command.go`
+  - wired into root command in `cmd/openai-app-server/root.go`
+- Added integration test for thread list command:
+  - `cmd/openai-app-server/thread_list_command_test.go`
+  - validates:
+    - output contains expected thread IDs
+    - outbound sequence includes `initialize`, `initialized`, `thread/list`
+- Ran full test suite:
+  - `go test ./...` (pass)
+
+### Why
+
+- Command-level integration with fake transport gives stronger confidence than unit tests alone while avoiding live-server dependencies.
+- Adding `thread read` now keeps command hierarchy coherent before phase-4 runtime work.
+
+### What worked
+
+- Command execution path against in-memory transport was stable and deterministic.
+- Test coverage now includes both protocol logic and CLI wiring.
+- All repository tests passed after phase-3 changes.
+
+### What didn't work
+
+- N/A for this step; no blocking failures encountered.
+
+### What I learned
+
+- A transport-injected command factory (`newThreadListClient`) gives good testability without overengineering.
+- Maintaining explicit handshake in command path catches regressions earlier than deferring it to late integration.
+
+### What was tricky to build
+
+- Capturing command output in integration tests required temporarily redirecting `os.Stdout` because current command implementations print directly via `fmt.Println`.
+- Symptom: normal Cobra output capture (`SetOut`) does not intercept direct stdout writes.
+- Approach: added a scoped stdout capture helper in the test file.
+
+### What warrants a second pair of eyes
+
+- Decide whether command output should migrate from direct stdout writes to Glazed processors/rows for richer output modes.
+- Confirm whether `thread read` should remain skeleton or be wired immediately in phase-4.
+
+### What should be done in the future
+
+- Move to Phase 4: JS runtime bootstrap and codex module skeleton while keeping tests non-live.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/cmd/openai-app-server/thread_list_command.go` (`newThreadListClient`, `Run`)
+  - `openai-app-server/cmd/openai-app-server/thread_list_command_test.go` (`TestThreadListCommandWithMemoryTransport`)
+  - `openai-app-server/pkg/codexrpc/threads.go` (`ThreadList`)
+  - `openai-app-server/pkg/codexrpc/memory_transport.go` (`MemoryTransport`)
+- How to validate:
+  - `go test ./...`
+  - `go test ./cmd/openai-app-server -run TestThreadListCommandWithMemoryTransport -count=1`
+
+### Technical details
+
+- Fake response payload used in integration test:
+  - `{"threads":[{"id":"thread-1","status":"active"},{"id":"thread-2","status":"completed"}]}`
+- Outbound method sequence asserted in test:
+  - `initialize` -> `initialized` -> `thread/list`
 

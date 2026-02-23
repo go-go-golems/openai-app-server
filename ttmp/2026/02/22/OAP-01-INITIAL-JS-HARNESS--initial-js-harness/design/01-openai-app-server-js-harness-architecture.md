@@ -33,15 +33,25 @@ RelatedFiles:
     - Path: openai-app-server/cmd/openai-app-server/root.go
       Note: Implemented phase-1 Glazed root command scaffold
     - Path: openai-app-server/cmd/openai-app-server/thread_list_command.go
-      Note: Implemented thread command skeleton
+      Note: |-
+        Implemented thread command skeleton
+        Phase-3 thread list CLI wiring to codex client
+    - Path: openai-app-server/cmd/openai-app-server/thread_list_command_test.go
+      Note: Phase-3 fake-transport integration test
+    - Path: openai-app-server/cmd/openai-app-server/thread_read_command.go
+      Note: Phase-3 thread read command skeleton
     - Path: openai-app-server/go.mod
       Note: Current module placeholder requiring bootstrap changes
     - Path: openai-app-server/pkg/codexrpc/client.go
       Note: Implemented handshake state machine and message routing
     - Path: openai-app-server/pkg/codexrpc/client_test.go
       Note: Implemented handshake unit tests
+    - Path: openai-app-server/pkg/codexrpc/memory_transport.go
+      Note: In-memory transport for integration tests
     - Path: openai-app-server/pkg/codexrpc/protocol.go
       Note: Implemented JSON-RPC envelope types
+    - Path: openai-app-server/pkg/codexrpc/threads.go
+      Note: Thread list API helper
     - Path: openai-app-server/pkg/codexrpc/transport.go
       Note: Implemented transport abstraction
     - Path: openai-app-server/pkg/codexrpc/transport_stdio.go
@@ -57,6 +67,7 @@ LastUpdated: 2026-02-23T02:05:00-05:00
 WhatFor: Design the first production-ready JS harness for Codex App Server in this repository.
 WhenToUse: Use as the implementation blueprint for building openai-app-server from the current scaffold.
 ---
+
 
 
 

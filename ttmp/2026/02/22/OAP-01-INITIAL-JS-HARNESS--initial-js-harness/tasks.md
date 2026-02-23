@@ -32,12 +32,12 @@
 
 ## Phase 3: Progressive CLI Validation (No Real Harness Yet)
 
-- [ ] Add `thread list` command wired to codex client API surface
-- [ ] Add `thread read` command skeleton with structured output
-- [ ] Add integration test with fake/in-memory transport for `thread list`
-- [ ] Run `go test ./...` (CLI + fake transport)
-- [ ] Commit Phase 3 CLI changes
-- [ ] Record diary step for Phase 3
+- [x] Add `thread list` command wired to codex client API surface
+- [x] Add `thread read` command skeleton with structured output
+- [x] Add integration test with fake/in-memory transport for `thread list`
+- [x] Run `go test ./...` (CLI + fake transport)
+- [x] Commit Phase 3 CLI changes
+- [x] Record diary step for Phase 3
 
 ## Phase 4: JS Runtime and Harness API Skeleton
 

@@ -50,3 +50,15 @@ Step 4: Completed Phase 2 codexrpc core (protocol models, transport abstraction,
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/protocol.go — JSON-RPC envelope definitions
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/transport_stdio.go — Stdio transport implementation skeleton
 
+
+## 2026-02-22
+
+Step 5: Completed Phase 3 CLI validation by wiring thread list to codexrpc, adding thread read skeleton, and adding fake-transport integration tests (commit 41d221684a31f074d1c4cef237445fa7c065378d).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/thread_list_command.go — Thread list command now uses codexrpc client
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/thread_list_command_test.go — In-memory transport integration test
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/cmd/openai-app-server/thread_read_command.go — Thread read skeleton command
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/pkg/codexrpc/memory_transport.go — Test transport implementation
+
