@@ -80,5 +80,13 @@
 - [x] Add module-API script for `thread/start` + `turn/start` flow under `ttmp/.../scripts/`
 - [x] Add playbook for thread/turn scenario with explicit success/failure markers
 - [x] Run `go test ./...` preflight before live run
-- [ ] **STOP-GATE:** Explain thread/turn script behavior + exact command and wait for approval
-- [ ] Execute thread/turn module-API live run against real server (after approval)
+- [x] **STOP-GATE:** Explain thread/turn script behavior + exact command and wait for approval
+- [x] Execute thread/turn module-API live run against real server (after approval)
+
+## Phase 9: Deterministic Turn-Completion Live Gate
+
+- [x] Add module-API script that waits for matching `turn/completed` notification before success
+- [x] Add playbook with deterministic completion markers and timeout behavior
+- [x] Run `go test ./...` preflight before live run
+- [ ] **STOP-GATE:** Explain deterministic turn-completion script + exact command and wait for approval
+- [ ] Execute deterministic turn-completion live run (after approval)

@@ -159,3 +159,27 @@ Step 13: Prepared next live gate for module-API thread/start + turn/start scenar
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js — New thread/turn live scenario script
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/03-module-api-thread-turn-live-plan.md — New run plan with explicit markers and stop-gate
 - /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed prep step and next-run command recorded
+
+
+## 2026-02-22
+
+Step 14: Executed live module-API thread/start + turn/start scenario after approval; observed successful start markers, notification stream, completion marker, and clean exit.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js — Live scenario script executed
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/03-module-api-thread-turn-live-plan.md — Plan and markers used during execution
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 8 completed and Phase 9 opened
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed run observations and next deterministic-gate rationale
+
+
+## 2026-02-22
+
+Step 15: Prepared deterministic turn-completed live gate (new script/playbook + preflight tests) and stopped before execution.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/05-module-api-turn-completed-gate.js — Deterministic script waiting for matching `turn/completed`
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/04-module-api-turn-completed-gate-plan.md — Deterministic live-run plan and markers
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md — Phase 9 pre-run items completed and stop-gate pending
+- /home/manuel/workspaces/2026-02-22/app-server-js/openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/reference/01-diary.md — Detailed prep and gate rationale

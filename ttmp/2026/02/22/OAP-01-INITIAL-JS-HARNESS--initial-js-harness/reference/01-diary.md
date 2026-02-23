@@ -1207,3 +1207,149 @@ The goal is to validate the next level of real behavior (thread + turn lifecycle
 
 - Next live-run command prepared (not executed in this step):
   - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 90000 --settle-ms 6000`
+
+
+## Step 14: Executed Live Thread/Turn Module-API Scenario
+
+After approval, I executed the prepared thread/start + turn/start live scenario. The run succeeded with expected start markers, rich notification stream, successful completion event, and clean process exit.
+
+This confirms the module API can drive a full thread/turn path against a real server, including streamed assistant deltas and terminal `turn/completed`.
+
+### Prompt Context
+
+**User prompt (verbatim):** "run it, an if successful, continue"
+
+**Assistant interpretation:** Run the prepared live scenario now; if it works, continue progressing the ticket.
+
+**Inferred user intent:** Validate this scenario in production-like conditions and keep momentum without pausing after success.
+
+**Commit (code):** pending
+
+### What I did
+
+- Executed:
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 90000 --settle-ms 6000`
+- Observed required markers:
+  - `module-api-thread-start` with `ok:true` and non-empty `threadId`
+  - `module-api-turn-start` with `ok:true` and non-empty `turnId`
+  - many `module-api-thread-turn-notification` lines
+  - `module-api-thread-turn-complete` with `ok:true`
+  - final `harness.run completed`
+- Updated Phase 8 tasks to complete and opened Phase 9 for deterministic completion gating.
+
+### Why
+
+- This was the next real lifecycle validation after module migration and list-only smoke.
+
+### What worked
+
+- Thread and turn started successfully.
+- Notification forwarding remained stable under higher event volume.
+- Assistant produced response stream and turn reached `turn/completed`.
+
+### What didn't work
+
+- The script’s completion marker can arrive before all late notifications because it uses fixed `clock.sleep` rather than waiting on explicit `turn/completed` match.
+
+### What I learned
+
+- Fixed settle delays are good for smoke checks but not ideal for deterministic completion guarantees in lifecycle tests.
+
+### What was tricky to build
+
+- Balancing script simplicity with deterministic semantics under asynchronous event delivery.
+- Approach for next phase: wait explicitly for `turn/completed` with matching ids and timeout fallback.
+
+### What warrants a second pair of eyes
+
+- Verify whether completion should require a matching `turn/completed` event or whether successful `turn/start` + elapsed settle is sufficient for intended harness semantics.
+
+### What should be done in the future
+
+- Implement deterministic turn completion wait script and gate the next real run on that behavior.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/04-module-api-thread-turn-live.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/03-module-api-thread-turn-live-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- How to validate:
+  - Re-run command above and check markers listed in this step.
+
+### Technical details
+
+- Observed live payload included assistant message delta stream and final `turn/completed`.
+
+
+## Step 15: Prepared Deterministic Turn-Completed Live Gate (No Run Yet)
+
+I prepared the next live-run scenario to be deterministic: success now requires receiving a matching `turn/completed` notification for the started turn, instead of relying on a fixed sleep window. I stopped before executing this new live command.
+
+This addresses the non-determinism noted in Step 14 where completion could be emitted before trailing notifications.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 14)
+
+**Assistant interpretation:** Continue progress after successful live run by hardening the next real-run scenario.
+
+**Inferred user intent:** Keep advancing in small real-validated increments with better reliability per phase.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added deterministic gate script:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/05-module-api-turn-completed-gate.js`
+- Added deterministic run playbook:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/04-module-api-turn-completed-gate-plan.md`
+- Updated tasks:
+  - `ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md` (Phase 9 pre-run items checked)
+- Ran preflight:
+  - `go test ./...` (pass)
+
+### Why
+
+- Needed deterministic completion semantics before the next live validation stage.
+
+### What worked
+
+- Script logic now tracks turn/thread ids and gates success on matching `turn/completed`.
+- Preflight passed without runtime regressions.
+
+### What didn't work
+
+- N/A
+
+### What I learned
+
+- Polling with `clock.sleep(100)` and explicit timeout is enough for deterministic gating in current runtime without extra host APIs.
+
+### What was tricky to build
+
+- Matching notification payload ids across schema variants (`turnId` vs nested structures).
+- Approach: shared extraction helpers and permissive matching conditions that still require turn identity.
+
+### What warrants a second pair of eyes
+
+- Timeout threshold (`15000ms`) may need tuning depending on model latency and backend load.
+
+### What should be done in the future
+
+- Execute the deterministic gate run, then compare reliability and signal quality against Step 14 flow.
+
+### Code review instructions
+
+- Where to start (files + key symbols):
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/05-module-api-turn-completed-gate.js`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/playbook/04-module-api-turn-completed-gate-plan.md`
+  - `openai-app-server/ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/tasks.md`
+- How to validate:
+  - `go test ./...`
+  - `test -f ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/05-module-api-turn-completed-gate.js`
+
+### Technical details
+
+- Next live-run command prepared (not executed in this step):
+  - `go run ./cmd/openai-app-server harness run --script ttmp/2026/02/22/OAP-01-INITIAL-JS-HARNESS--initial-js-harness/scripts/05-module-api-turn-completed-gate.js --transport stdio --stdio-command codex --stdio-args "app-server --listen stdio://" --timeout-ms 90000 --settle-ms 6000`
