@@ -34,11 +34,16 @@ func TestRuntimeInstallsHostAndCodexModule(t *testing.T) {
 	defer func() { _ = rt.Close() }()
 
 	_, err = rt.RunString(`
+      const rpc = require("rpc");
+      const ui = require("ui");
+      const clock = require("clock");
       const codex = require("codex");
-      if (!globalThis.__host) throw new Error("missing __host");
-      if (!globalThis.__host.rpc) throw new Error("missing __host.rpc");
-      if (!globalThis.__host.ui) throw new Error("missing __host.ui");
-      if (!globalThis.__host.clock) throw new Error("missing __host.clock");
+      if (typeof globalThis.__host !== "undefined") throw new Error("unexpected __host global");
+      if (typeof rpc.request !== "function") throw new Error("missing rpc.request");
+      if (typeof rpc.notify !== "function") throw new Error("missing rpc.notify");
+      if (typeof ui.emit !== "function") throw new Error("missing ui.emit");
+      if (typeof clock.nowMs !== "function") throw new Error("missing clock.nowMs");
+      if (typeof clock.sleep !== "function") throw new Error("missing clock.sleep");
       const session = codex.connect();
       if (!session.connected) throw new Error("session not connected");
       if (typeof session.request !== "function") throw new Error("missing session.request");
@@ -64,6 +69,7 @@ func TestRuntimeNotificationCallbackDispatch(t *testing.T) {
 
 	_, err = rt.RunString(`
       const codex = require("codex");
+      const ui = require("ui");
       const session = codex.connect();
       globalThis.__seen = 0;
       session.onNotification((evt) => {
@@ -71,6 +77,7 @@ func TestRuntimeNotificationCallbackDispatch(t *testing.T) {
           globalThis.__seen = 41;
         }
       });
+      ui.emit({ type: "runtime-test" });
     `)
 	if err != nil {
 		t.Fatalf("RunString() setup error = %v", err)

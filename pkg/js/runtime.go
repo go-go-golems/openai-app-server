@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/dop251/goja"
 	"github.com/dop251/goja_nodejs/eventloop"
@@ -66,11 +65,11 @@ func NewRuntime(opts Options) (*Runtime, error) {
 
 	reg := require.NewRegistry()
 	registerCodexModule(reg, rt)
+	registerRPCModule(reg, rt)
+	registerUIModule(reg, rt)
+	registerClockModule(reg, rt)
 
 	_, err := rt.runner.Call(context.Background(), "runtime.init", func(_ context.Context, vm *goja.Runtime) (any, error) {
-		if err := rt.installHostPrimitives(vm); err != nil {
-			return nil, err
-		}
 		reg.Enable(vm)
 		return nil, nil
 	})
@@ -162,81 +161,6 @@ func (rt *Runtime) EmitUIEvent(event any) error {
 			}
 		}
 	})
-}
-
-func (rt *Runtime) installHostPrimitives(vm *goja.Runtime) error {
-	host := vm.NewObject()
-
-	rpcObj := vm.NewObject()
-	_ = rpcObj.Set("request", func(call goja.FunctionCall) goja.Value {
-		return rt.rpcRequestPromise(vm, call)
-	})
-	_ = rpcObj.Set("notify", func(call goja.FunctionCall) goja.Value {
-		return rt.rpcNotify(vm, call)
-	})
-	_ = rpcObj.Set("onNotification", func(call goja.FunctionCall) goja.Value {
-		return rt.registerHandler(vm, call, "rpcNotification")
-	})
-	_ = rpcObj.Set("onRequest", func(call goja.FunctionCall) goja.Value {
-		return rt.registerHandler(vm, call, "rpcRequest")
-	})
-
-	uiObj := vm.NewObject()
-	_ = uiObj.Set("emit", func(call goja.FunctionCall) goja.Value {
-		if rt.ui == nil {
-			return goja.Undefined()
-		}
-		var event any
-		if len(call.Arguments) > 0 {
-			event = call.Arguments[0].Export()
-		}
-		if err := rt.ui.Emit(context.Background(), event); err != nil {
-			panic(vm.NewGoError(err))
-		}
-		return goja.Undefined()
-	})
-	_ = uiObj.Set("onEvent", func(call goja.FunctionCall) goja.Value {
-		return rt.registerHandler(vm, call, "uiEvent")
-	})
-
-	clockObj := vm.NewObject()
-	_ = clockObj.Set("nowMs", func(goja.FunctionCall) goja.Value {
-		return vm.ToValue(time.Now().UnixMilli())
-	})
-	_ = clockObj.Set("sleep", func(call goja.FunctionCall) goja.Value {
-		ms := int64(0)
-		if len(call.Arguments) > 0 {
-			ms = call.Arguments[0].ToInteger()
-		}
-		if ms < 0 {
-			ms = 0
-		}
-		promise, resolve, reject := vm.NewPromise()
-		go func() {
-			time.Sleep(time.Duration(ms) * time.Millisecond)
-			_ = rt.runner.Post(context.Background(), "runtime.clockSleep.resolve", func(_ context.Context, vm *goja.Runtime) {
-				if err := resolve(goja.Undefined()); err != nil {
-					_ = reject(vm.ToValue(err.Error()))
-				}
-			})
-		}()
-		return vm.ToValue(promise)
-	})
-
-	if err := host.Set("rpc", rpcObj); err != nil {
-		return err
-	}
-	if err := host.Set("ui", uiObj); err != nil {
-		return err
-	}
-	if err := host.Set("clock", clockObj); err != nil {
-		return err
-	}
-
-	if err := vm.Set("__host", host); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (rt *Runtime) rpcRequestPromise(vm *goja.Runtime, call goja.FunctionCall) goja.Value {

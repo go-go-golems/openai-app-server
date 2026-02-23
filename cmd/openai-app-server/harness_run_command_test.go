@@ -15,10 +15,11 @@ func TestHarnessRunCommandWithMemoryTransport(t *testing.T) {
 	scriptPath := filepath.Join(tmp, "harness.js")
 	script := `
 const codex = require("codex");
+const ui = require("ui");
 const session = codex.connect();
 session.request("thread/list", { limit: 1 }).then((r) => {
   const threads = r.threads || [];
-  __host.ui.emit({ type: "threads", count: threads.length });
+  ui.emit({ type: "threads", count: threads.length });
 });
 `
 	if err := os.WriteFile(scriptPath, []byte(script), 0o644); err != nil {
@@ -78,10 +79,11 @@ func TestHarnessRunForwardsServerNotificationsToJS(t *testing.T) {
 	scriptPath := filepath.Join(tmp, "harness-notif.js")
 	script := `
 const codex = require("codex");
+const ui = require("ui");
 const session = codex.connect();
 session.onNotification((evt) => {
   if (evt.method === "thread/started") {
-    __host.ui.emit({ type: "notif-forward", ok: true, id: evt.params.id });
+    ui.emit({ type: "notif-forward", ok: true, id: evt.params.id });
   }
 });
 session.request("thread/list", { limit: 1 }).then(() => {});
