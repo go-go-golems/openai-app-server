@@ -59,3 +59,11 @@ OPENAI_APP_SERVER_BINARY=$(shell which openai-app-server)
 install:
 	GOWORK=off go build -o ./dist/openai-app-server ./cmd/openai-app-server && \
 		cp ./dist/openai-app-server $(OPENAI_APP_SERVER_BINARY)
+
+.PHONY: logcopter-generate
+logcopter-generate:
+	GOWORK=off go generate ./...
+
+.PHONY: logcopter-check
+logcopter-check:
+	GOWORK=off go tool logcopter-gen -area-prefix go-go-golems.openai-app-server -strip-prefix github.com/go-go-golems/openai-app-server -check ./cmd/... ./pkg/...
